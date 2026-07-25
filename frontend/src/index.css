@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/* ------------------------------------------------------------------ *
+ * Slope Stability AI — design tokens (Apple-style dark palette)
+ * Tailwind v4 reads these @theme vars and generates utilities:
+ *   bg-black, text-primary, text-accent, border-glass, ease-apple ...
+ * ------------------------------------------------------------------ */
+@theme {
+  --color-black: #000000;
+  --color-black-fade: #1d1d1f;
+
+  --color-primary: #f5f5f7;
+  --color-secondary: rgba(245, 245, 247, 0.56);
+  --color-tertiary: rgba(245, 245, 247, 0.36);
+
+  --color-accent: #0071e3;
+  --color-accent-glow: rgba(0, 113, 227, 0.35);
+  --color-accent-soft: rgba(0, 113, 227, 0.14);
+
+  --color-safe: #30d158;
+  --color-warning: #ff9f0a;
+  --color-critical: #ff375f;
+
+  --color-glass: rgba(255, 255, 255, 0.06);
+  --color-glass-hover: rgba(255, 255, 255, 0.09);
+  --color-glass-border: rgba(255, 255, 255, 0.12);
+  --color-glass-border-hover: rgba(0, 113, 227, 0.55);
+
+  --ease-apple: cubic-bezier(0.25, 0.1, 0.25, 1);
+
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display",
+    "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #000;
+  color: var(--color-primary);
+  font-family: var(--font-display);
+  overflow: hidden;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+}
+
+::selection {
+  background: var(--color-accent-glow);
+  color: var(--color-primary);
+}
+
+/* Very slow Ken Burns drift on the photographic background. Deliberately
+   barely perceptible — 90s per leg, alternating, so it never draws the eye
+   away from the interface. Held still for prefers-reduced-motion. */
+@keyframes ken-burns {
+  from {
+    transform: scale(1.06) translate3d(-0.8%, -0.6%, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(0.8%, 0.6%, 0);
+  }
+}
+
+.ken-burns {
+  transform: scale(1.06);
+  animation: ken-burns 90s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ken-burns {
+    animation: none;
+    transform: scale(1.04);
+  }
+}
+
+/* Glass surface — reused by the mode cards. Kept as a component class so the
+   backdrop-filter + layered highlight/shadow stack lives in one place. */
+@layer components {
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      0 8px 32px rgba(0, 0, 0, 0.4);
+  }
+}

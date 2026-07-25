@@ -1,0 +1,185 @@
+no,location,H_m,beta_deg,gamma_kN_m3,c_kPa,phi_deg,r_u,stability,status_binary,reporter
+1,Congress street open cut slope Chicago USA,8.23,35,18.68,26.34,15,0,Failure,0,Sah1994
+2,Brightlingsea slide UK,3.66,30,16.5,11.49,0,0,Failure,0,Sah1994
+3,Unknown,30.5,20,18.84,14.36,25,0,Stable,1,Sah1994
+4,Unknown,30.5,20,18.84,57.46,20,0,Stable,1,Sah1994
+5,Case1 open pit iron ore mine India,100,35,28.44,29.42,35,0,Stable,1,Sah1994
+6,Case2 open pit iron ore mine India,100,35,28.44,39.23,38,0,Stable,1,Sah1994
+7,Open pit chromite mine Orissa India,40,30,20.6,16.28,26.5,0,Failure,0,Sah1994
+8,Sarukuygi landslide Japan,50,20,14.8,0,17,0,Failure,0,Sah1994
+9,Case1 open pit iron ore mine Goa India,88,30,14,11.97,26,0,Failure,0,Sah1994
+10,Mercoirol open pit coal mine France,120,53,25,120,45,0,Stable,1,Sah1994
+11,Marquesade open pit iron ore mine Spain,200,50,26,150.05,45,0,Stable,1,Sah1994
+14,Case1 Highvale coal mine Alberta Canada,10,30,22.4,10,35,0,Stable,1,Sah1994
+15,Case2 Highvale coal mine Alberta Canada,20,30,21.1,10,30.34,0,Stable,1,Sah1994
+16,Case1 open pit coal mine Newcastle coalfield Australia,50,45,22,20,36,0,Failure,0,Sah1994
+23,Case1 Wyoming USA,115,40,16,70,20,0,Failure,0,Sah1994
+24,Seven Sisters Landslide UK,10.67,22,20.41,24.9,13,0.35,Stable,1,Sah1994
+25,Case1 The Northolt slide UK,12.19,22,19.63,11.97,20,0.405,Failure,0,Sah1994
+26,Selset Landslide Yorkshire UK,12.8,28,21.82,8.62,32,0.49,Failure,0,Sah1994
+27,Saskatchewan dam Canada,45.72,16,20.41,33.52,11,0.2,Failure,0,Sah1994
+28,Case2 The Northolt slide UK,10.67,25,18.84,15.32,30,0.38,Stable,1,Sah1994
+31,River bank side Alberta Canada,21,35,19.06,11.71,28,0.11,Failure,0,Sah1994
+32,Unknown,30.5,20,18.84,14.36,25,0.45,Failure,0,Sah1994
+33,Unknown,76.81,31,21.51,6.94,30,0.38,Failure,0,Sah1994
+34,Case2 open pit iron ore mine Goa India,88,30,14,11.97,26,0.45,Failure,0,Sah1994
+35,Athens slope Greece,20,45,18,24,30.15,0.12,Failure,0,Sah1994
+37,Case1 open pit coal mine Alberta Canada,15,45,22.4,100,45,0.25,Stable,1,Sah1994
+38,Case2 open pit coal mine Alberta Canada,10,45,22.4,10,35,0.4,Failure,0,Sah1994
+39,Case3 open pit coal mine Newcastle coalfield Australia,50,45,20,20,36,0.25,Failure,0,Sah1994
+40,Case4 open pit coal mine Newcastle coalfield Australia,50,45,20,20,36,0.5,Failure,0,Sah1994
+46,Case4 Harbour slope Newcastle Australia,8,20,18,5,30,0.3,Stable,1,Sah1994
+47,Unknown,50,45,20,20,36,0.25,Failure,0,FengHudson2004
+48,Unknown,292,47.1,27,40,35,0,Failure,0,FengHudson2004
+49,Unknown,284,50,25,46,35,0,Stable,1,FengHudson2004
+50,Unknown,366,46,31.3,68,37,0,Failure,0,FengHudson2004
+51,Unknown,299,44.5,25,46,36,0,Stable,1,FengHudson2004
+52,Unknown,480,40,27.3,10,39,0,Stable,1,FengHudson2004
+53,Unknown,393,46,25,46,35,0,Stable,1,FengHudson2004
+54,Unknown,330,49,25,48,40,0,Stable,1,FengHudson2004
+55,Unknown,305,47,31.3,68.6,37,0,Failure,0,FengHudson2004
+56,Unknown,299,45.5,25,55,36,0,Stable,1,FengHudson2004
+57,Unknown,213,47,31.3,68,37,0,Failure,0,FengHudson2004
+58,Three Gorges hydropower project China,73,45,26.49,150,33,0.15,Stable,1,XuShao1998
+59,Three Gorges hydropower project China,130,50,26.7,150,33,0.25,Stable,1,XuShao1998
+60,Three Gorges hydropower project China,120,52,26.89,150,33,0.25,Stable,1,XuShao1998
+61,Three Gorges hydropower project China,80,45.3,26.57,300,38.7,0.15,Failure,0,XuShao1998
+62,Three Gorges hydropower project China,155,54,26.78,300,38.7,0.25,Failure,0,XuShao1998
+63,Three Gorges hydropower project China,138,58,26.81,200,35,0.25,Stable,1,XuShao1998
+64,Three Gorges hydropower project China,92.2,40,26.43,50,26.6,0.15,Stable,1,XuShao1998
+65,Three Gorges hydropower project China,170,50,26.69,50,26.6,0.25,Stable,1,XuShao1998
+66,Three Gorges hydropower project China,108,59,26.81,60,28.8,0.25,Stable,1,XuShao1998
+67,Dingjiahe phosphorus mine China,236,41,27.8,27.8,27,0.1,Stable,1,Li2006
+68,Guilin-Liuzhou highway China,100,25.6,27.1,22,18.6,0.19,Failure,0,He2004
+76,Yuecheng reservoir China,39,19.29,18.8,9.8,21,0.25,Failure,0,Chen2009Xiao2011
+78,Gushan reservoir China,38,17.07,17.2,10,24.25,0.4,Stable,1,Chen2009Xiao2011
+79,Laobu reservoir China,54,21.04,19,11.9,20.4,0.75,Stable,1,Chen2009Xiao2011
+80,Wenyuhe reservoir China,53,15.52,18,5,26.5,0.4,Failure,0,Chen2009Xiao2011
+81,Wenyuhe reservoir China,53,15.52,18,5,22,0.4,Failure,0,Chen2009Xiao2011
+82,Hongwuyi reservoir China,51,18.43,17.4,20,24,0.4,Failure,0,Chen2009Xiao2011
+83,Hongwuyi reservoir China,51,18.43,17.8,21.2,13.92,0.4,Stable,1,Chen2009Xiao2011
+84,Lingli reservoir China,40,21.8,18.8,8,26,0.4,Failure,0,Chen2009Xiao2011
+85,Lingli reservoir China,40,21.8,18.8,8,26,0.4,Failure,0,Chen2009Xiao2011
+86,Lingli reservoir China,40,21.8,18,21,21.33,0.4,Failure,0,Chen2009Xiao2011
+87,Zhejiang sea wall China,9,21.8,17.6,10,16,0.4,Stable,1,Chen2009Xiao2011
+88,Zhejiang sea wall China,9,21.8,17.6,10,8,0.4,Stable,1,Chen2009Xiao2011
+89,Hunan anxiang reservoir China,15,45,17.4,14.95,21.2,0.4,Failure,0,Chen2009Xiao2011
+90,Qing River area landslide China,400,18,22,29,15,0,Failure,0,Wang2005
+91,Qing River area landslide China,380,23,23,24,19.8,0,Failure,0,Wang2005
+92,Qing River area landslide China,196,30,22,40,30,0,Stable,1,Wang2005
+93,Qing River area landslide China,210,24,22.54,29.4,20,0,Stable,1,Wang2005
+94,Qing River area landslide China,257,30,22,21,23,0,Failure,0,Wang2005
+95,Qing River area landslide China,190,26,23.5,10,27,0,Failure,0,Wang2005
+96,Qing River area landslide China,290,20,22.5,18,20,0,Stable,1,Wang2005
+97,Qing River area landslide China,220,25,22.5,20,16,0,Stable,1,Wang2005
+98,Qing River area landslide China,8.23,35,18.68,26.34,15,0,Failure,0,Wang2005
+100,Qing River area landslide China,30.5,20,18.84,14.36,25,0,Stable,1,Wang2005
+101,Qing River area landslide China,100,35,28.44,29.42,35,0,Stable,1,Wang2005
+102,Qing River area landslide China,100,35,28.44,39.23,38,0,Stable,1,Wang2005
+103,Qing River area landslide China,40,30,20.6,16.28,26.5,0,Failure,0,Wang2005
+105,Qing River area landslide China,88,30,14,11.97,26,0,Failure,0,Wang2005
+106,Qing River area landslide China,120,53,25,12,45,0,Stable,1,Wang2005
+107,Qing River area landslide China,200,50,26,15,45,0,Stable,1,Wang2005
+108,Qing River area landslide China,115,40,16,7,20,0,Failure,0,Wang2005
+109,Qing River area landslide China,10.67,22,20.41,24.9,13,0,Stable,1,Wang2005
+110,Qing River area landslide China,12.19,22,19.63,11.98,20,0,Failure,0,Wang2005
+111,Qing River area landslide China,12.8,28,21.83,8.62,32,0,Failure,0,Wang2005
+112,Qing River area landslide China,45.72,16,20.41,33.52,11,0,Failure,0,Wang2005
+113,Qing River area landslide China,10.67,25,18.84,15.32,30,0,Stable,1,Wang2005
+116,Yudonghe landslide China,565,21,21,20,24,0,Stable,1,Wang2005
+117,Guzhang gaofeng slope China,150,35,27,27.3,29.1,0.26,Failure,0,Jin2004
+118,Guzhang gaofeng slope China,184,37,27,27.3,29.1,0.22,Failure,0,Jin2004
+119,Guzhang gaofeng slope China,126.5,34,27,27.3,29.1,0.3,Failure,0,Jin2004
+120,Chengmenshan open pit copper mine China,285,50,25,46,35,0.25,Stable,1,Zhu2011
+121,Baijiagou earth slope China,36,30,20.45,16,15,0.25,Stable,1,Su2009
+122,Jingping first stage hydropower station China,60,45,27,70,22.8,0.32,Stable,1,Xu2009
+123,Left bank accumulation body Xiaodongjiang hydropower station China,10,45,22,10,35,0.403,Failure,0,Wang2009
+124,Longxi landslide Longyangxia hydropower Station China,30,45,20,20,36,0.503,Failure,0,Wang2009
+125,Chana landslide Longyangxia hydropower Station China,50,45,20,0.1,36,0.29,Failure,0,Wang2009
+126,Canal slope Baoji gorge Wei River diversion China,50,45,20,0.1,36,0.503,Failure,0,Wang2009
+131,Songshan ancient landslide Lechangxia hydropower China,420,43,27,43,35,0.29,Failure,0,Wang2009
+132,Back channel landslide Three Gorges China,407,42,27,50,40,0.29,Stable,1,Wang2009
+133,Jipazi landslide Three Gorges China,359,42,27,35,35,0.29,Stable,1,Wang2009
+134,Jiuxianping Landslide Three Gorges China,320,37.8,27,37.5,35,0.29,Stable,1,Wang2009
+135,Heishe landslide China,301,42.6,27,32,33,0.29,Failure,0,Wang2009
+136,Liujiawuchang landslide Three Gorges China,239,42.2,27,32,33,0.29,Stable,1,Wang2009
+137,Majiaba landslide Three Gorges China,110,41,27.3,14,31,0.29,Stable,1,Wang2009
+138,Sandengzi landslide Three Gorges China,135,41,27.3,31.5,29.703,0.293,Stable,1,Wang2009
+139,Yaqianwan landslide Three Gorges China,90.5,50,27.3,16.2,28,0.29,Stable,1,Wang2009
+141,Shijiapo landslide China,511,41,27.3,10,39,0.29,Stable,1,Wang2009
+142,Tanggudong landslide China,470,40,27.3,10,39,0.29,Stable,1,Wang2009
+143,Tianbao landslide China,443,47,25,46,35,0.29,Stable,1,Wang2009
+144,Shipingtai landslide Xiaoxi hydropower station China,435,44,25,46,35,0.29,Stable,1,Wang2009
+145,Dongyemiao landslide China,432,46,25,46,35,0.29,Stable,1,Wang2009
+146,Hongtupo landslide China,230,30,26,150,45,0.29,Stable,1,Wang2009
+149,No7 landslide Tianshengqiao second cascade China,10,30,22,10,35,0.29,Stable,1,Wang2009
+150,Kualiangzi landslide China,30,30,21,10,30.343,0.29,Stable,1,Wang2009
+151,No1 landslide Jishixia hydropower station China,50,45,22,10,36,0.29,Failure,0,Wang2009
+152,Daxi landslide China,30,45,22,20,36,0.29,Failure,0,Wang2009
+153,Right Bank landslide Zihong reservoir China,4,35,12,0.03,30,0.29,Failure,0,Wang2009
+156,Yangdagou landslide Xunyang hydropower station China,200.5,49,31.3,68,37,0.29,Failure,0,Wang2009
+157,Sujiaping Landslide China,50,45,20,30,36,0.29,Failure,0,Wang2009
+158,Maidipo Landslide China,40.3,37.8,19.6,21.8,29.5,0.25,Stable,1,Wang2009
+159,Maoping Landslide China,61.9,36.5,23.1,25.2,29.2,0.4,Stable,1,Wang2009
+160,Shaling Landslide China,23.5,47.5,23.8,31,38.7,0.31,Stable,1,Wang2009
+161,Niugunhan Landslide China,88,40.2,22.3,20.1,31,0.19,Stable,1,Wang2009
+162,Xieliupo Landslide China,115,49.1,23.5,25,20,0.41,Stable,1,Wang2009
+163,Zhaojiatang Landslide China,40.3,46.2,23,20,20.3,0.25,Stable,1,Wang2009
+164,Touzhaigou Landslide China,123.6,41.5,21.5,15,29,0.36,Stable,1,Wang2009
+165,Shenzhen reservoir diversion tunnel landslide China,45.2,30.3,23.4,15,38.5,0.28,Failure,0,Wang2009
+166,Taipingyi hydropower diversion tunnel landslide China,201.2,46.8,19.6,17.8,29.2,0.37,Stable,1,Wang2009
+167,Bawangshan Landslide China,49.5,45.8,22.1,45.8,49.5,0.21,Stable,1,Wang2009
+168,Jiangxi Qiyi Reservoir China,50,20.32,18.82,25,14.6,0.4,Failure,0,Wang2009
+169,KSH slope Tailie elementary school China,10,10,20,8,20,0,Failure,0,Chen2011
+170,KSH slope right of Circle E Tailie Overpass China,30,30,27.3,37.3,31,0,Stable,1,Chen2011
+171,KSH landslide left K71+625-K71+700 China,35,25,20.6,26.31,22,0,Failure,0,Chen2011
+172,KSH slope Pingxite Bridge China,50,40,21.6,6.5,19,0,Failure,0,Chen2011
+173,KSH slope right K76+085-K76+200 China,35,28,22.4,28.9,24,0,Failure,0,Chen2011
+174,KSH slope left K77+920-K78+100 China,33,30,23.2,31.2,23,0,Failure,0,Chen2011
+175,KSH slope left K79+165-K79+300 China,26,30,26.8,37.5,32,0,Stable,1,Chen2011
+176,KSH slope right K79+920-K80+035 China,42,25,27.4,38.1,31,0,Stable,1,Chen2011
+177,Landslide right ZAK0+315-ZAK0+407 China,50,50,21.8,32.7,27,0,Failure,0,Chen2011
+178,KSH slope left K83+260-K83+360 China,60,35,21.8,27.6,25,0,Failure,0,Chen2011
+179,KSH slope right K88+300-K88+420 China,21,30,26.5,35.4,32,0,Stable,1,Chen2011
+180,KSH slope right K88+700-K88+876 China,39,35,26.5,36.1,31,0,Stable,1,Chen2011
+181,KSH slope right K89+730-K89+841 China,69,30,27,35.8,32,0,Stable,1,Chen2011
+182,KSH slope right K90+225-K90+345 China,22,25,27,38.4,33,0,Stable,1,Chen2011
+183,KSH slope left K98+520-K98+710 China,52,50,21.4,28.8,20,0,Failure,0,Chen2011
+184,KSH slope left K99+120-K99+260 China,55,38,26,42.4,37,0,Stable,1,Chen2011
+185,KSH slope left K100+280-K100+410 China,30,25,26,39.4,36,0,Stable,1,Chen2011
+186,KSH slope left K100+615-K100+915 China,26,25,25.6,38.8,36,0,Stable,1,Chen2011
+187,Landslide left K103+330-K103+450 China,53,45,20,30.3,25,0,Failure,0,Chen2011
+188,KSH slope left K104+610-K104+805 China,50,30,25.8,34.7,33,0,Stable,1,Chen2011
+189,KSH sandslide left K104+892-K105+052 China,99,35,21.8,28.8,26,0,Failure,0,Chen2011
+190,KSH sandslide left K105+260-K105+330 China,60,30,21.8,31.2,25,0,Failure,0,Chen2011
+191,KSH slope left K106+268-K106+577 China,51,30,24,41.5,36,0,Stable,1,Chen2011
+192,KSH slope left K106+992-K107+085 China,50,35,24,40.8,35,0,Stable,1,Chen2011
+193,KSH landslide left K107+856-K107+968 China,70,35,20.6,27.8,27,0,Failure,0,Chen2011
+194,KSH landslide left K108+960-K109+010 China,55,35,20.6,32.4,26,0,Failure,0,Chen2011
+195,KSH slope left K109+841-K109+900 China,40,27,25.8,38.2,33,0,Stable,1,Chen2011
+196,KSH slope left K110+200-K110+274 China,45,25,25.8,39.4,33,0,Stable,1,Chen2011
+197,KSH landslide left K110+421-K110+500 China,31,40,21.1,33.5,28,0,Failure,0,Chen2011
+198,KSH landslide left K110+980-K110+240 China,75,30,21.1,34.2,26,0,Failure,0,Chen2011
+199,KSH slope right K112+720-K112+815 China,52,25,26.6,42.4,37,0,Stable,1,Chen2011
+200,KSH slope left K113+500-K113+580 China,42,35,26.6,44.1,38,0,Stable,1,Chen2011
+201,KSH slope left K114+060-K114+167 China,60,35,26.6,40.7,35,0,Stable,1,Chen2011
+202,KSH slope left K114+224-K114+258 China,40,30,25.8,41.2,35,0,Stable,1,Chen2011
+203,KSH slope left K117+200-K117+412 China,33,30,25.8,43.3,37,0,Stable,1,Chen2011
+204,KSH front slope tunnel Songjieya K122+310 China,60,45,21.7,32,27,0,Failure,0,Chen2011
+205,KSH landslide right K122+350-K122+455 China,65,40,20.6,28.5,27,0,Failure,0,Chen2011
+206,KSH landslide left K127+440-K127+590 China,70,40,21.5,29.8,26,0,Failure,0,Chen2011
+207,KSH slope left K127+761-K127+882 China,36,34,26.5,42.9,38,0,Stable,1,Chen2011
+208,KSH landslide left K137+650-K137+730 China,45,30,20.8,15.6,20,0,Failure,0,Chen2011
+209,KSH landslide left K138+624-K138+797 China,40,30,20.8,14.8,21,0,Failure,0,Chen2011
+210,KSH landslide right K75+760-K76+000 China,58,40,19.6,29.6,23,0,Failure,0,Chen2011
+211,KSH slope right ZBK0+000-ZBK0+185 China,35,20,25.4,33,33,0,Failure,0,Chen2011
+212,KSH landslide left K84+602-K85+185 China,50,50,22.4,29.3,26,0,Failure,0,Chen2011
+213,KSH slope right K91+614-K91+660 China,30,35,26.2,41.5,36,0,Stable,1,Chen2011
+214,KSH slope right K91+720-K91+771 China,36,23,26.2,42.3,36,0,Stable,1,Chen2011
+215,KSH slope left K100+950-K101+300 China,32,30,25.6,39.8,36,0,Stable,1,Chen2011
+216,KSH slope left K102+691-K102+880 China,60,35,25.6,36.8,34,0,Stable,1,Chen2011
+217,KSH slope right K118+360-K118+549 China,37,30,26.2,42.8,37,0,Stable,1,Chen2011
+218,KSH slope right K119+823-K119+951 China,68,35,26.2,43.8,38,0,Stable,1,Chen2011
+219,KSH sandslide right K124+340-K124+562 China,42,30,20.6,32.4,26,0,Failure,0,Chen2011
+220,KSH slope right K131+280-K131+380 China,54,42,26.5,41.8,36,0,Stable,1,Chen2011
+221,KSH landslide left K138+840-K138+930 China,53,30,20.8,15.4,21,0,Failure,0,Chen2011
