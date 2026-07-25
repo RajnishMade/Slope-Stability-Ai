@@ -8,7 +8,15 @@ so repeated predictions (e.g. from a running API server) don't retrain.
 Run from the WedgeFailure folder:  python3 wedge_tabpfn_predict.py
 """
 import numpy as np
-from tabpfn import TabPFNRegressor
+
+# Prefer TabPFN's hosted inference (no torch, auth via TABPFN_TOKEN env var).
+# The hosted regressor takes no `device` arg; the local one does.
+try:
+    from tabpfn_client import TabPFNRegressor
+    _REGRESSOR_KW: dict = {}
+except ImportError:
+    from tabpfn import TabPFNRegressor
+    _REGRESSOR_KW = {"device": "cpu"}
 
 try:
     from .wedge_config import FEATURES, _wrap180, load_data   # imported as a package (e.g. by the backend)
@@ -33,7 +41,7 @@ def get_model():
             if _MODEL is None:
                 print("Training TabPFN on all data...")
                 X_train, y_train, _ = load_data()
-                model = TabPFNRegressor(device="cpu")
+                model = TabPFNRegressor(**_REGRESSOR_KW)
                 model.fit(X_train.values, y_train.values)
                 _MODEL = model
     return _MODEL

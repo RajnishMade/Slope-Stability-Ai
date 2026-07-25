@@ -13,7 +13,13 @@ sys.path.append(os.path.join(PROJECT_ROOT, "Src"))
 import numpy as np
 import pandas as pd
 import config
-from tabpfn import TabPFNClassifier
+
+# Prefer TabPFN's hosted inference (no torch, auth via TABPFN_TOKEN env var).
+# Falls back to the local model only if tabpfn-client isn't installed.
+try:
+    from tabpfn_client import TabPFNClassifier
+except ImportError:
+    from tabpfn import TabPFNClassifier
 
 FEATURES = ["gamma_kN_m3", "c_kPa", "phi_deg", "beta_deg", "H_m", "r_u"]
 

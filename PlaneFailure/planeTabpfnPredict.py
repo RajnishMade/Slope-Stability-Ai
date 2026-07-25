@@ -12,7 +12,12 @@ sys.path.append(os.path.join(PROJECT_ROOT, "Src"))
 
 import config
 from feature_engineering.FeaturePlane import make_plane_features, build_plane_row
-from tabpfn import TabPFNRegressor
+
+# Prefer TabPFN's hosted inference (no torch, auth via TABPFN_TOKEN env var).
+try:
+    from tabpfn_client import TabPFNRegressor
+except ImportError:
+    from tabpfn import TabPFNRegressor
 
 import threading
 

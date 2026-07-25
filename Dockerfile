@@ -23,10 +23,10 @@ ENV HOME=/home/user \
 
 WORKDIR /home/user/app
 
-# Install CPU-only torch first (avoids the multi-GB CUDA build), then the rest.
+# Inference runs on TabPFN's hosted API (tabpfn-client), so there is no torch to
+# install — the image stays small and the runtime memory footprint is tiny.
 COPY --chown=user requirements.txt ./
-RUN pip install --no-cache-dir --user torch==2.8.0 --index-url https://download.pytorch.org/whl/cpu \
- && pip install --no-cache-dir --user -r requirements.txt
+RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Copy the Python project (backend + the four failure-mode packages + Data + Src).
 COPY --chown=user . ./

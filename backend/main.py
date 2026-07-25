@@ -66,6 +66,14 @@ def _warm_models():
 async def lifespan(app: FastAPI):
     # Non-blocking: the API serves /health immediately; models warm in the
     # background and each get_model() also lazily fits on first use.
+    if os.environ.get("TABPFN_TOKEN"):
+        print("TABPFN_TOKEN detected — using hosted TabPFN inference.")
+    else:
+        print(
+            "WARNING: TABPFN_TOKEN is not set. Hosted TabPFN inference will fail. "
+            "Set TABPFN_TOKEN in the host's environment variables "
+            "(get a free key at https://ux.priorlabs.ai/account)."
+        )
     print("Starting API; warming TabPFN models in the background...")
     threading.Thread(target=_warm_models, name="model-warmup", daemon=True).start()
     yield
