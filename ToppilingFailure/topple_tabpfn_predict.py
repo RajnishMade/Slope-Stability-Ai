@@ -9,6 +9,8 @@ so repeated predictions (e.g. from a running API server) don't retrain.
 Run:  python3 topple_tabpfn_predict.py
       TABPFN_ALLOW_CPU_LARGE_DATASET=1 python3 topple_tabpfn_predict.py   # if local TabPFN >1000 rows
 """
+import threading
+
 import numpy as np
 try:
     from .topple_config import FEATURES, load_xy       # imported as a package (e.g. by the backend)
@@ -16,6 +18,7 @@ except ImportError:
     from topple_config import FEATURES, load_xy         # run directly: python3 topple_tabpfn_predict.py
 
 _MODEL = None
+_LOCK = threading.Lock()
 
 
 def _get_regressor():
@@ -33,13 +36,20 @@ def _get_regressor():
 
 
 def get_model():
-    """Train TabPFN on all data once, then reuse the fitted model."""
+    """Train TabPFN on all data once, then reuse the fitted model.
+
+    Thread-safe: fits a local variable and assigns the global last, under a
+    lock, so a concurrent request can never get a half-built, unfitted model.
+    """
     global _MODEL
     if _MODEL is None:
-        print("Training TabPFN on all data...")
-        X, y = load_xy()
-        _MODEL = _get_regressor()
-        _MODEL.fit(X, y)
+        with _LOCK:
+            if _MODEL is None:
+                print("Training TabPFN on all data...")
+                X, y = load_xy()
+                model = _get_regressor()
+                model.fit(X, y)
+                _MODEL = model
     return _MODEL
 
 

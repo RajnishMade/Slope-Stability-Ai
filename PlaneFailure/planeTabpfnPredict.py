@@ -14,20 +14,30 @@ import config
 from feature_engineering.FeaturePlane import make_plane_features, build_plane_row
 from tabpfn import TabPFNRegressor
 
+import threading
+
 _MODEL = None
+_LOCK = threading.Lock()
 
 
 def get_model():
-    """Train TabPFN on all data once, then reuse the fitted model."""
+    """Train TabPFN on all data once, then reuse the fitted model.
+
+    Thread-safe: fits a local variable and assigns the global last, under a
+    lock, so a concurrent request can never get a half-built, unfitted model.
+    """
     global _MODEL
     if _MODEL is None:
-        import pandas as pd
-        print("Training TabPFN on all data...")
-        df = pd.read_csv(config.PLANE_DATA_PATH)
-        X = make_plane_features(df)
-        y = df[config.PLANE_TARGET].values
-        _MODEL = TabPFNRegressor()
-        _MODEL.fit(X.values, y)
+        with _LOCK:
+            if _MODEL is None:
+                import pandas as pd
+                print("Training TabPFN on all data...")
+                df = pd.read_csv(config.PLANE_DATA_PATH)
+                X = make_plane_features(df)
+                y = df[config.PLANE_TARGET].values
+                model = TabPFNRegressor()
+                model.fit(X.values, y)
+                _MODEL = model
     return _MODEL
 
 

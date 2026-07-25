@@ -15,17 +15,27 @@ try:
 except ImportError:
     from wedge_config import FEATURES, _wrap180, load_data     # run directly: python3 wedge_tabpfn_predict.py
 
+import threading
+
 _MODEL = None
+_LOCK = threading.Lock()
 
 
 def get_model():
-    """Train TabPFN on all data once, then reuse the fitted model."""
+    """Train TabPFN on all data once, then reuse the fitted model.
+
+    Thread-safe: fits a local variable and assigns the global last, under a
+    lock, so a concurrent request can never get a half-built, unfitted model.
+    """
     global _MODEL
     if _MODEL is None:
-        print("Training TabPFN on all data...")
-        X_train, y_train, _ = load_data()
-        _MODEL = TabPFNRegressor(device="cpu")
-        _MODEL.fit(X_train.values, y_train.values)
+        with _LOCK:
+            if _MODEL is None:
+                print("Training TabPFN on all data...")
+                X_train, y_train, _ = load_data()
+                model = TabPFNRegressor(device="cpu")
+                model.fit(X_train.values, y_train.values)
+                _MODEL = model
     return _MODEL
 
 

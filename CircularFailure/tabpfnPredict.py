@@ -17,19 +17,31 @@ from tabpfn import TabPFNClassifier
 
 FEATURES = ["gamma_kN_m3", "c_kPa", "phi_deg", "beta_deg", "H_m", "r_u"]
 
+import threading
+
 _MODEL = None
+_LOCK = threading.Lock()
 
 
 def get_model():
-    """Train TabPFN on all data once, then reuse the fitted model."""
+    """Train TabPFN on all data once, then reuse the fitted model.
+
+    Thread-safe: the global is only ever None or a *fully fitted* model — the
+    model is fitted on a local variable and assigned last, under a lock, so a
+    concurrent request (e.g. the background warmup racing an incoming predict)
+    can never receive a half-built, unfitted instance.
+    """
     global _MODEL
     if _MODEL is None:
-        print("Training TabPFN on all data...")
-        df = pd.read_csv(config.CIRCULAR_DATA_PATH)
-        X = df[FEATURES].values
-        y = df[config.CIRCULAR_TARGET].values
-        _MODEL = TabPFNClassifier()
-        _MODEL.fit(X, y)
+        with _LOCK:
+            if _MODEL is None:
+                print("Training TabPFN on all data...")
+                df = pd.read_csv(config.CIRCULAR_DATA_PATH)
+                X = df[FEATURES].values
+                y = df[config.CIRCULAR_TARGET].values
+                model = TabPFNClassifier()
+                model.fit(X, y)
+                _MODEL = model
     return _MODEL
 
 
