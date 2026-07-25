@@ -50,7 +50,7 @@ export default function ModeSelector() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: EASE, delay: 0.06 }}
         >
-          Which failure mode?
+          Which Failure Mode?
         </motion.h1>
 
         <motion.p
@@ -59,7 +59,7 @@ export default function ModeSelector() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, ease: EASE, delay: 0.12 }}
         >
-          Select a slope failure mechanism to begin prediction
+          Select A Slope Failure Mechanism To Begin Prediction
         </motion.p>
 
         <div className="mt-14 flex flex-wrap items-stretch justify-center gap-6">
