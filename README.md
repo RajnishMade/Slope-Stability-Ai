@@ -1,3 +1,17 @@
+---
+title: Slope Stability AI
+emoji: ⛰️
+colorFrom: blue
+colorTo: gray
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
+<!-- The block above configures the Hugging Face backend Space (see DEPLOY.md).
+     It must stay at the very top of this file for HF to read it. GitHub renders
+     it as a small metadata table. -->
+
 # Slope Stability AI
 
 An AI-powered slope stability prediction platform for **open-cast mining operations**, designed to estimate the **Factor of Safety (FoS)** and predict the stability status of different geological slope failure mechanisms using machine learning.

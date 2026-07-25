@@ -1,0 +1,32 @@
+# Keep the backend image lean — none of this is needed to serve the API.
+frontend/
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# git + editor + OS
+.git/
+.gitignore
+.vscode/
+.idea/
+.DS_Store
+**/.DS_Store
+
+# python caches
+__pycache__/
+**/__pycache__/
+*.pyc
+.venv/
+venv/
+
+# the large source photos (the app uses the resized copies under frontend/public)
+*.jpg
+*.jpeg
+*.png
+*.avif
+*.webp
+
+# docs / deploy meta not needed at runtime
+DEPLOY.md
+scratchpad/

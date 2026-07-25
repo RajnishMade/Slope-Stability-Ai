@@ -1,7 +1,11 @@
-pandas
-numpy
-scikit-learn
-tabpfn
-fastapi
-uvicorn[standard]
-pydantic
+# Pinned to the versions the models were validated against, so the deployed
+# image reproduces the same predictions. torch is installed separately in the
+# Dockerfile (CPU-only build) to keep the image small; tabpfn pulls it in
+# locally.
+pandas==2.3.3
+numpy==2.0.2
+scikit-learn==1.6.1
+tabpfn==8.0.7
+fastapi==0.128.0
+uvicorn[standard]==0.39.0
+pydantic==2.12.5

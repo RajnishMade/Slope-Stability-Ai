@@ -56,10 +56,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Slope Stability AI API", lifespan=lifespan)
 
-# Tighten allow_origins to your frontend's actual domain before going live.
+# Allowed CORS origins come from the ALLOWED_ORIGINS env var (comma-separated),
+# defaulting to "*" for a public read-only demo. To lock it to your deployed
+# frontend, set e.g. ALLOWED_ORIGINS=https://your-app.vercel.app
+_origins_env = os.environ.get("ALLOWED_ORIGINS", "*").strip()
+_allow_origins = ["*"] if _origins_env == "*" else [o.strip() for o in _origins_env.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_allow_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
