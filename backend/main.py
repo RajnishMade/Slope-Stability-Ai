@@ -12,6 +12,7 @@ Interactive docs once running:  http://127.0.0.1:8000/docs
 import json
 import os
 import sys
+import threading
 from contextlib import asynccontextmanager
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -43,14 +44,30 @@ from backend.schemas import (
 )
 
 
+def _warm_models():
+    """Fit all four models in the background so first requests are fast, without
+    blocking startup — a blocking warmup can trip a platform health check during
+    the ~30-60s fit and cause a restart loop."""
+    for name, load in (
+        ("circular", _load_circular),
+        ("plane", _load_plane),
+        ("toppling", _load_toppling),
+        ("wedge", _load_wedge),
+    ):
+        try:
+            load()
+            print(f"  {name} model ready")
+        except Exception as e:  # noqa: BLE001 — warmup is best-effort
+            print(f"  {name} model warmup failed: {e}")
+    print("Model warmup complete.")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Warming up TabPFN models (training on full datasets once)...")
-    _load_circular()
-    _load_plane()
-    _load_toppling()
-    _load_wedge()
-    print("All 4 models ready.")
+    # Non-blocking: the API serves /health immediately; models warm in the
+    # background and each get_model() also lazily fits on first use.
+    print("Starting API; warming TabPFN models in the background...")
+    threading.Thread(target=_warm_models, name="model-warmup", daemon=True).start()
     yield
 
 

@@ -1,7 +1,9 @@
 # syntax=docker/dockerfile:1
 #
-# Backend image for Hugging Face Spaces (Docker SDK).
-# Serves the FastAPI + TabPFN API on port 7860 (HF's default app_port).
+# Backend image for the FastAPI + TabPFN API. Portable across hosts:
+#   - Railway / Render / Fly: they inject $PORT, which the CMD binds to.
+#   - Hugging Face Spaces:     $PORT is unset, so it falls back to 7860
+#                              (HF's default app_port).
 #
 # The frontend is NOT built or served here — it deploys separately to Vercel.
 # .dockerignore keeps frontend/, node_modules/ and the source photos out of the
@@ -31,6 +33,7 @@ COPY --chown=user . ./
 
 EXPOSE 7860
 
-# One worker on purpose: TabPFN inference is heavy and concurrent requests to a
-# single model deadlock it. Requests are handled sequentially.
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860", "--workers", "1"]
+# Shell form so ${PORT} expands at runtime. One worker on purpose: TabPFN
+# inference is heavy and concurrent requests to a single model deadlock it, so
+# requests are handled sequentially.
+CMD uvicorn backend.main:app --host 0.0.0.0 --port ${PORT:-7860} --workers 1

@@ -1,47 +1,43 @@
 # Deployment guide
 
-Free public deployment: **backend on Hugging Face Spaces**, **frontend on Vercel**.
+Free/low-cost public deployment: **backend on Railway**, **frontend on Vercel**.
 Both deploy from this single GitHub repo. Neither needs a credit card.
 
 > **Deploy the backend first.** The frontend needs the backend's public URL, which
-> only exists after the Space is live.
+> only exists after the backend is live.
 
 ---
 
-## Part 1 — Backend → Hugging Face Spaces (Docker)
+## Part 1 — Backend → Railway (Docker)
 
-The repo is already set up as a Docker Space: `Dockerfile`, `.dockerignore`, and
-the Space config (the `---` block at the top of `README.md`) are all in place.
+> Hugging Face Docker/Gradio Spaces now require a paid PRO plan (only Static
+> Spaces are free), so the backend goes to Railway instead. Railway gives a
+> one-time trial credit (no card to start), then ~$5/month. It provides enough
+> RAM (1–2 GB) to run the real TabPFN models, which the 512 MB free tiers can't.
+> The repo is Railway-ready: `Dockerfile`, `.dockerignore` and `railway.json`
+> are in place, and the container binds Railway's injected `$PORT`.
 
-1. Create a free account at <https://huggingface.co>.
-2. **New → Space.**
-   - **Owner:** your username
-   - **Space name:** `slope-stability-ai` (or anything)
-   - **SDK:** **Docker** → *Blank / from scratch*
-   - **Hardware:** **CPU basic — free** (2 vCPU, 16 GB RAM)
-   - **Visibility:** Public
-3. Push this repo to the Space. In the project folder:
-
-   ```bash
-   git remote add space https://huggingface.co/spaces/<your-username>/slope-stability-ai
-   git push space main
-   ```
-
-   (HF will ask for your username and an **access token** as the password —
-   create one at *Settings → Access Tokens*, role **write**.)
-4. Open the Space. First build takes several minutes (installing torch etc.).
-   When it says **Running**, the API is live at:
+1. Sign up at <https://railway.com> with your GitHub account.
+2. **New Project → Deploy from GitHub repo** → select `Slope-Stability-Ai`.
+3. Railway detects the `Dockerfile` + `railway.json` and builds automatically.
+   The first build takes several minutes (installing torch). Leave the service
+   root at the repo root — `.dockerignore` keeps the frontend out of the image.
+4. When the deploy is live, open the service → **Settings → Networking →
+   Generate Domain**. That gives a public URL like:
 
    ```
-   https://<your-username>-slope-stability-ai.hf.space
+   https://<something>.up.railway.app
    ```
 
-   Test it: `https://<your-username>-slope-stability-ai.hf.space/health` should
-   return `{"status":"ok"}`, and `/docs` shows the interactive API.
+5. Test it: `https://<something>.up.railway.app/health` should return
+   `{"status":"ok"}` right away, and `/docs` shows the interactive API. The
+   models warm in the background, so the *first* prediction of each mode takes
+   ~10 s while that mode fits; after that it's ~2.4 s.
 
-> **First request after idle is slow (~1 min).** Free Spaces sleep after a period
-> of inactivity, and on wake all four TabPFN models re-fit before the first
-> prediction returns. This is expected.
+> **If Railway can't run it** (build fails, container is killed for memory, or
+> the trial credit runs out and you don't want to pay), switch the backend to
+> TabPFN's free hosted inference API — that removes PyTorch and fits any free
+> host. Ask and this can be wired up.
 
 ---
 
@@ -57,7 +53,7 @@ the Space config (the `---` block at the top of `README.md`) are all in place.
 
    | Name | Value |
    | --- | --- |
-   | `VITE_API_BASE` | `https://<your-username>-slope-stability-ai.hf.space` |
+   | `VITE_API_BASE` | `https://<something>.up.railway.app` |
 
    (No trailing slash. This is baked in at build time, so it must be set before
    the first build.)
@@ -71,24 +67,23 @@ like `/analysis/planar` and page refreshes work with React Router.
 ## Part 3 — (Optional) lock down CORS
 
 The API defaults to `allow_origins=["*"]` — fine for a public read-only demo.
-To restrict it to your Vercel site, add an env var **on the Hugging Face Space**
-(*Settings → Variables and secrets*):
+To restrict it to your Vercel site, add an env var **on the Railway service**
+(*Variables* tab):
 
 ```
 ALLOWED_ORIGINS = https://<project>.vercel.app
 ```
 
-The Space restarts and only accepts requests from that origin.
+Railway restarts the service and only accepts requests from that origin.
 
 ---
 
 ## Redeploying after changes
 
-- **Frontend or backend code:** `git push origin main`, then `git push space main`.
-  Vercel redeploys automatically on push to GitHub; the Space rebuilds on push to
-  the `space` remote.
+- **Any code change:** `git push origin main`. Both Railway and Vercel watch the
+  GitHub repo and redeploy automatically.
 - **After changing datasets or the model:** re-run `python3 scripts/evaluate_models.py`
-  to refresh `backend/model_metrics.json`, commit it, then push to the Space.
+  to refresh `backend/model_metrics.json`, commit it, and push.
 
 ---
 
