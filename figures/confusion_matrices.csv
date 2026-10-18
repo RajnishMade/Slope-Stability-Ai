@@ -1,0 +1,5 @@
+model,threshold,TN,FP,FN,TP,n,accuracy,recall_unstable,precision_unstable,FN_rate
+Planar,1.0,73,5,3,68,149,0.9463,0.9577,0.9315,0.0423
+Wedge,1.0,191,10,18,61,280,0.9,0.7722,0.8592,0.2278
+Toppling,1.0,286,14,9,291,600,0.9617,0.97,0.9541,0.03
+Circular,label,68,18,21,77,184,0.788,0.7857,0.8105,0.2143

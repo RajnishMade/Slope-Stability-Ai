@@ -1,0 +1,5 @@
+model,type,n,R2_cv,MAE,RMSE,RMSE_over_MAE,MAPE_pct,signed_bias,signed_bias_pct,FN@1.0,FN@1.2,FN@1.3,worst_miss_FoS,worst_miss_pct,worst_miss_true_FoS,accuracy,roc_auc,recall_unstable,precision_unstable
+planar,regressor,149,0.9665,0.0616,0.1617,2.63,7.29,-0.0026,2.32,4.2% (3/71),1.1% (1/92),2.0% (2/99),0.788,96.3,0.818,,,,
+wedge,regressor,280,0.8625,0.1529,0.2376,1.55,11.57,-0.0013,2.67,22.8% (18/79),10.9% (14/129),10.8% (16/148),1.167,82.7,1.412,,,,
+toppling,regressor,600,0.9617,0.0401,0.0802,2.0,3.37,-0.0007,0.3,3.0% (9/300),3.3% (14/422),1.5% (7/453),0.586,53.9,1.087,,,,
+circular,classifier,184,n/a,n/a,n/a,n/a,n/a,n/a,n/a,21.4% (21/98),"n/a (binary label, no FoS)","n/a (binary label, no FoS)",n/a,n/a,n/a,0.788,0.884,0.7857,0.8105

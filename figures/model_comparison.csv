@@ -1,0 +1,13 @@
+dataset,task,model,R2,MAE,RMSE,accuracy,roc_auc,best_by_primary
+planar,regression,TabPFN,0.9665,0.0616,0.1617,,,★
+planar,regression,RandomForest,0.839,0.166,0.3542,,,
+planar,regression,XGBoost,0.9188,0.1018,0.2516,,,
+wedge,regression,TabPFN,0.8625,0.1529,0.2376,,,★
+wedge,regression,RandomForest,0.4878,0.3441,0.4584,,,
+wedge,regression,XGBoost,0.5978,0.3039,0.4063,,,
+toppling,regression,TabPFN,0.9617,0.0401,0.0802,,,★
+toppling,regression,RandomForest,0.7045,0.1543,0.223,,,
+toppling,regression,XGBoost,0.7828,0.1289,0.1911,,,
+circular,classification,TabPFN,,,,0.788,0.884,★
+circular,classification,RandomForest,,,,0.7826,0.8821,
+circular,classification,XGBoost,,,,0.7772,0.8579,

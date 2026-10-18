@@ -1,0 +1,38 @@
+mechanism,parameter,unit,response,expected_direction,observed_direction,pass_fail,linear_R2,nonlinear_R2,nonlinear_gain,nonlinear,spearman_rho,pearson_r,response_range,baseline_median,sweep_min,sweep_max
+planar,Slope face ψf,deg,FoS,down (-),down,PASS,0.884,0.9811,0.0971,yes,-0.9115,-0.9402,0.2667,58.0,48.0,86.0
+planar,Plane dip ψp,deg,FoS,down (-),down,PASS,0.4529,0.6298,0.1769,yes,-0.6923,-0.673,0.172,46.0,21.0,69.0
+planar,Upper slope ψs,deg,FoS,down (-),down,PASS,0.8252,0.9937,0.1685,yes,-0.8905,-0.9084,0.1889,10.0,0.0,30.0
+planar,Height H,m,FoS,down (-),down,PASS,0.5485,0.9332,0.3848,yes,-0.9962,-0.7406,4.7763,60.0,1.0,252.0
+planar,Unit weight γ,kN/m³,FoS,report-only,up,report-only,0.4584,0.6126,0.1542,yes,0.6505,0.677,0.2987,26.68,24.03,28.35
+planar,Friction φ,deg,FoS,up (+),up,PASS,0.82,0.978,0.158,yes,0.9575,0.9055,0.7019,40.0,13.5,45.7
+planar,Cohesion c,kPa,FoS,up (+),up,PASS,0.9079,0.9655,0.0576,yes,0.9624,0.9528,0.3216,98.1,5.0,187.57
+planar,Seismic kh,–,FoS,down (-),down,PASS,0.6253,0.8355,0.2102,yes,-0.7543,-0.7908,0.2311,0.0,0.0,0.15
+planar,Water level,0–1,FoS,down (-),down,PASS,0.8802,0.94,0.0598,yes,-0.9295,-0.9382,0.4955,0.1,0.0,0.9
+wedge,J1 dip,deg,FoS,report-only,up,report-only,0.7359,0.9992,0.2634,yes,0.8028,0.8578,0.3028,53.78,31.92,75.3
+wedge,J2 dip,deg,FoS,report-only,up,report-only,0.5226,0.9978,0.4752,yes,0.5908,0.7229,0.3228,55.06,30.89,74.65
+wedge,J1 dip-dir,deg,FoS,report-only,down,report-only,0.0759,0.8946,0.8187,yes,-0.098,-0.2754,1.0743,168.17,0.33,357.76
+wedge,J2 dip-dir,deg,FoS,report-only,up,report-only,0.5259,0.7723,0.2464,yes,0.5453,0.7252,1.3848,166.29,1.85,359.76
+wedge,Slope-face dip,deg,FoS,down (-),down,PASS,0.9501,0.9984,0.0483,yes,-0.9998,-0.9747,0.8634,64.025,45.02,75.3
+wedge,Slope dip-dir,deg,FoS,report-only,flat,report-only,0.0061,0.9779,0.9718,yes,-0.0422,-0.078,1.4744,175.805,0.56,359.18
+wedge,Upper-slope dip,deg,FoS,report-only,up,report-only,0.9742,0.9772,0.0029,no,0.9889,0.987,0.0654,10.98,0.04,19.88
+wedge,Upper dip-dir,deg,FoS,report-only,up,report-only,0.008,0.2142,0.2062,yes,0.2617,0.0895,0.0835,177.345,2.68,358.9
+wedge,Height H,m,FoS,down (-),down,PASS,0.8466,0.9968,0.1502,yes,-0.9998,-0.9201,1.0232,23.76,8.01,39.97
+wedge,Unit weight γ,kN/m³,FoS,report-only,down,report-only,0.9609,0.9783,0.0175,no,-0.9843,-0.9802,0.0661,24.744,22.0,26.977
+wedge,Cohesion c1,kPa,FoS,up (+),up,PASS,0.9362,0.9985,0.0623,yes,0.9995,0.9676,0.3904,24.595,0.36,49.92
+wedge,Friction φ1,deg,FoS,up (+),up,PASS,0.9849,0.986,0.0011,no,0.9912,0.9924,0.088,31.75,25.01,39.95
+wedge,Cohesion c2,kPa,FoS,up (+),up,PASS,0.9498,0.998,0.0483,yes,0.9999,0.9746,0.6759,25.105,0.09,49.99
+wedge,Friction φ2,deg,FoS,up (+),up,PASS,0.9866,0.9935,0.0069,no,0.9959,0.9933,0.1194,30.81,25.05,39.95
+wedge,Water %,%,FoS,down (-),down,PASS,0.4559,0.9976,0.5417,yes,-0.4806,-0.6752,0.2326,5.835,0.0,38.36
+toppling,Slope angle,deg,FoS,down (-),down,PASS,0.9701,0.9967,0.0266,yes,-0.9998,-0.9849,0.7425,63.285,44.36,80.0
+toppling,Bedding dip,deg,FoS,up (+),up,PASS,0.6031,0.9887,0.3856,yes,0.9997,0.7766,1.463,69.755,55.11,74.99
+toppling,Joint spacing,m,FoS,up (+),up,PASS,0.8714,0.9647,0.0933,yes,0.9999,0.9335,1.0421,7.6265,1.094,11.991
+toppling,Height H,m,FoS,down (-),down,PASS,0.8657,0.9529,0.0872,yes,-0.9999,-0.9304,1.0325,30.035,5.26,59.91
+toppling,Joint friction φj,deg,FoS,up (+),up,PASS,0.9872,0.9935,0.0062,no,0.9962,0.9936,0.7699,32.495,22.06,44.99
+toppling,Unit weight γ,kN/m³,FoS,report-only,up,report-only,0.4479,0.4561,0.0082,no,0.6836,0.6692,0.0505,25.01,23.02,27.0
+toppling,Water ratio,–,FoS,down (-),down,PASS,0.9335,0.9918,0.0583,yes,-0.9522,-0.9662,0.3489,0.305,0.004,0.699
+circular,Unit weight γ,kN/m³,P(stable),report-only,down,report-only,0.8869,0.9483,0.0613,yes,-0.9484,-0.9418,0.8551,22.4,12.0,31.3
+circular,Cohesion c,kPa,P(stable),up (+),up,PASS,0.0192,0.6867,0.6675,yes,0.3285,-0.1386,0.7171,28.8,0.0,300.0
+circular,Friction φ,deg,P(stable),up (+),down,FAIL,0.3784,0.7308,0.3524,yes,-0.5817,-0.6151,0.6522,30.075,0.0,49.5
+circular,Slope angle β,deg,P(stable),down (-),up,FAIL,0.4356,0.7022,0.2666,yes,0.5307,0.66,0.41,35.0,10.0,59.0
+circular,Height H,m,P(stable),down (-),down,PASS,0.3878,0.9112,0.5234,yes,-0.2604,-0.6227,0.3431,52.0,3.66,565.0
+circular,Pore ratio r_u,–,P(stable),down (-),down,PASS,0.4366,0.9795,0.5429,yes,-0.4475,-0.6607,0.4261,0.0,0.0,0.75
