@@ -24,6 +24,19 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
     sys.path.append(PROJECT_ROOT)
 
+# A key pasted into a hosting dashboard often carries a stray newline, spaces or
+# quotes, which Prior Labs rejects. Clean it BEFORE the predictors import
+# tabpfn-client, which reads the variable once at import time.
+_raw_token = os.environ.get("TABPFN_TOKEN")
+if _raw_token is not None:
+    _clean_token = _raw_token.strip().strip("\"'").strip()
+    if _clean_token != _raw_token:
+        print("TABPFN_TOKEN had surrounding whitespace/quotes — stripped them.")
+    if _clean_token:
+        os.environ["TABPFN_TOKEN"] = _clean_token
+    else:
+        os.environ.pop("TABPFN_TOKEN")
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -172,9 +185,37 @@ def _predict(fn, **kwargs):
         )
     try:
         return fn(**kwargs)
+    except EOFError:
+        # tabpfn-client falls back to an interactive login prompt whenever Prior
+        # Labs doesn't accept the token — impossible on a server, so input()
+        # hits EOF. Say why instead.
+        raise HTTPException(status_code=503, detail=_explain_token_rejection())
     except Exception as e:  # noqa: BLE001 — reported to the client, logged in full
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Prediction failed — {type(e).__name__}: {str(e)[:240]}")
+
+
+def _explain_token_rejection() -> str:
+    """Ask Prior Labs why TABPFN_TOKEN isn't accepted (status code only — the
+    token itself is never logged or returned)."""
+    try:
+        from tabpfn_client.client import ServiceClient
+
+        token = os.environ.get("TABPFN_TOKEN", "")
+        r = ServiceClient.httpx_client.get(
+            ServiceClient.server_endpoints.protected_root.path,
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        code = r.status_code
+    except Exception as e:  # noqa: BLE001
+        return f"TabPFN authentication failed and Prior Labs could not be reached to check why ({type(e).__name__})."
+    if code == 403:
+        return ("Prior Labs accepted TABPFN_TOKEN but the account's email is not verified — "
+                "verify it at https://ux.priorlabs.ai, then retry.")
+    if code == 401:
+        return ("Prior Labs rejected TABPFN_TOKEN as invalid (HTTP 401) — copy a fresh API key from "
+                "https://ux.priorlabs.ai/account, paste it as the TABPFN_TOKEN value, and redeploy.")
+    return f"TabPFN authentication failed (Prior Labs returned HTTP {code})."
 
 
 @app.get("/metrics")
