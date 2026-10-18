@@ -70,7 +70,7 @@ export const TECH_STACK: { area: string; items: string }[] = [
   { area: "Models", items: "TabPFN (Prior Labs) — classifier & regressors" },
   { area: "API", items: "Python · FastAPI · Uvicorn · pandas · scikit-learn" },
   { area: "Interface", items: "React · TypeScript · Vite · Tailwind CSS · Three.js (react-three-fiber)" },
-  { area: "Deployment", items: "Railway (API, Docker) · Vercel (web)" },
+  { area: "Deployment", items: "Vercel — website and serverless API" },
 ];
 
 /** Optional credits — add names here and a "Credits" card appears; empty = hidden. */

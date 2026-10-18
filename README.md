@@ -1,22 +1,10 @@
----
-title: Slope Stability AI
-emoji: ⛰️
-colorFrom: blue
-colorTo: gray
-sdk: docker
-app_port: 7860
-pinned: false
----
-
-<!-- The block above configures the Hugging Face backend Space (see DEPLOY.md).
-     It must stay at the very top of this file for HF to read it. GitHub renders
-     it as a small metadata table. -->
-
 # Slope Stability AI
 
 An AI-powered slope stability prediction platform for **open-cast mining operations**, designed to estimate the **Factor of Safety (FoS)** and predict the stability status of different geological slope failure mechanisms using machine learning.
 
 The project combines **geotechnical engineering principles**, **TabPFN-based tabular deep learning**, and an interactive web application to provide rapid slope stability assessment for research and educational purposes.
+
+**Live site:** https://slope-stability-ai.vercel.app
 
 ---
 
@@ -35,12 +23,14 @@ The three rock modes are **regression** models that predict a numeric FoS, which
 
 ### DGMS thresholds applied
 
-| Material | Minimum FoS |
-| --- | --- |
-| Rock slopes (planar, wedge, toppling) | ≥ 1.2 |
-| Dump / overburden (circular) | ≥ 1.3 |
+From DGMS (Tech) Circular No. 03 of 2020, para 3.2 — one two-tier rule for all pit, bench and dump slopes:
 
-Results are colour-coded green (clears the threshold), amber (marginal) or red (below).
+| Slope type | Minimum FoS |
+| --- | --- |
+| Working pit, bench and dump slopes | ≥ 1.30 |
+| Permanent or long-standing slopes | ≥ 1.50 |
+
+FoS results are checked against the 1.30 working-slope minimum (and reported against 1.50), colour-coded green (meets it), amber (within 10% below) or red (below). The rule is legally binding for opencast coal mines and best practice for metalliferous mines.
 
 ---
 
@@ -121,22 +111,22 @@ Rotational failure typical of dumps, overburden and weak rock masses.
 
 The prediction engine is built on **TabPFN (Tabular Prior-data Fitted Network)** — a transformer pre-trained on synthetic tabular tasks that performs inference in a single forward pass, with no per-dataset training loop or hyperparameter tuning. This suits the small, high-quality geotechnical datasets available here, where gradient-boosted models tend to overfit.
 
-TabPFN has no saved weights file per mode: each model is fitted on its dataset **once at API startup** and held in memory, so requests only run inference.
+TabPFN has no saved weights file per mode: each model is fitted on its dataset **once per server process** — in the background at startup when run locally, or on the first request for that mode on Vercel — then held in memory, so later requests only run inference.
 
 ### Measured performance
 
-Metrics from an 80/20 held-out split (`scripts/evaluate_models.py`), not training scores:
+All metrics are on held-out data (`scripts/evaluate_models.py`), never training scores. 5-fold cross-validation (mean ± std) is the headline; the single 80/20 split is shown for reference:
 
-| Mode | Task | Performance | Rows | Features |
-| --- | --- | --- | --- | --- |
-| Planar | Regression | R² 0.966 · MAE 0.072 FoS | 149 | 9 |
-| Toppling | Regression | R² 0.948 · MAE 0.046 FoS | 600 | 7 |
-| Wedge | Regression | R² 0.911 · MAE 0.140 FoS | 280 | 14 |
-| Circular | Classification | Accuracy 73% · ROC-AUC 0.84 | 184 | 6 |
+| Mode | Task | 5-fold CV | 80/20 split | Rows | Features |
+| --- | --- | --- | --- | --- | --- |
+| Planar | Regression | R² 0.94 ± 0.09 | R² 0.966 · MAE 0.072 FoS | 149 | 9 |
+| Toppling | Regression | R² 0.96 ± 0.02 | R² 0.948 · MAE 0.046 FoS | 600 | 7 |
+| Wedge | Regression | R² 0.86 ± 0.04 | R² 0.911 · MAE 0.140 FoS | 280 | 14 |
+| Circular | Classification | Accuracy 79% ± 3 · ROC-AUC 0.89 | Accuracy 73% · ROC-AUC 0.84 | 184 | 6 |
 
-> **Reading these numbers honestly.** The wedge and toppling datasets are entirely solver-generated, so their high R² measures how well the model reproduces the closed-form solver — **not** field accuracy. Circular's 73% is the real figure on a small set of genuine case histories; it is lower precisely because it is not learning an equation. Treat the synthetic modes as stage-1 pretraining that requires fine-tuning on real cases before any site use.
+> **Reading these numbers honestly.** The wedge and toppling datasets are entirely solver-generated, so their high R² measures how well the model reproduces the closed-form solver — **not** field accuracy. Circular's 79% (cross-validated) is the real figure on a small set of genuine case histories; it is lower precisely because it is not learning an equation. Treat the synthetic modes as stage-1 pretraining that requires fine-tuning on real cases before any site use.
 
-Run `python3 scripts/evaluate_models.py` to regenerate `backend/model_metrics.json`, which the API serves to the frontend.
+Run `python3 scripts/evaluate_models.py` to regenerate `backend/model_metrics.json`, which the API serves to the frontend. The site's **Validation** page adds the TabPFN vs RandomForest / XGBoost comparison and confusion matrices (scripts in `scripts/`).
 
 ---
 
@@ -147,6 +137,8 @@ Run `python3 scripts/evaluate_models.py` to regenerate `backend/model_metrics.js
 **Backend** — Python, FastAPI, Pydantic, Uvicorn
 
 **Machine Learning** — TabPFN, NumPy, Pandas, scikit-learn
+
+**Deployment** — Vercel (static frontend + serverless FastAPI function)
 
 ---
 
@@ -192,13 +184,13 @@ User Input (parameter form)
 Validation + Feature Processing
       │
       ▼
-TabPFN Model  (fitted once at startup, held in memory)
+TabPFN Model  (fitted once per process, held in memory)
       │
       ▼
 Factor of Safety   ── or ──   Stable / Unstable + probability
       │                                    (circular mode)
       ▼
-DGMS Threshold Comparison  (≥ 1.2 rock / ≥ 1.3 dump)
+DGMS Threshold Comparison  (≥ 1.30 working / ≥ 1.50 permanent)
       │
       ▼
 Interactive 3D Visualisation + Interpretation
@@ -226,6 +218,11 @@ Install backend dependencies:
 pip install -r requirements.txt
 ```
 
+The backend runs TabPFN either through Prior Labs' hosted API or locally — pick one:
+
+- **Hosted (light):** set a free key from https://ux.priorlabs.ai/account — `export TABPFN_TOKEN=<your key>`
+- **Local, no token:** `pip install tabpfn` (pulls in PyTorch; heavier). Used automatically whenever `TABPFN_TOKEN` is unset.
+
 Install frontend dependencies:
 
 ```bash
@@ -240,7 +237,7 @@ Start the backend **from the project root** (two terminals are needed):
 uvicorn backend.main:app --reload
 ```
 
-The first start takes roughly 30–60 seconds while all four TabPFN models are fitted. It is ready when the log prints `All 4 models ready.`
+The API answers immediately while the four TabPFN models warm up in the background (roughly 30–60 seconds with local TabPFN); the log prints `Model warmup complete.` when done. A prediction for a mode that hasn't warmed yet simply waits for its fit.
 
 Start the frontend from the `frontend/` directory:
 
@@ -255,6 +252,12 @@ npm run dev
 | Interactive API docs | http://localhost:8000/docs |
 
 The backend must be running for predictions and the model-accuracy panels to populate; the frontend degrades gracefully and reports a solver error if it is unreachable.
+
+---
+
+## Deployment
+
+The live site runs entirely on Vercel's free plan: the frontend as a static Vite build and the API as a serverless FastAPI function (`app.py` + root `vercel.json`) using TabPFN's hosted inference. Step-by-step instructions are in [DEPLOY.md](DEPLOY.md).
 
 ---
 
