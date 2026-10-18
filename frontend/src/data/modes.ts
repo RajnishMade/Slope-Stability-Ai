@@ -10,6 +10,8 @@ export interface FailureMode {
   id: ModeId;
   title: string;
   description: string;
+  /** short credibility line shown on the card: dataset size + model type */
+  meta: string;
   Preview: ComponentType<{ active: boolean }>;
 }
 
@@ -22,24 +24,28 @@ export const FAILURE_MODES: FailureMode[] = [
     id: "circular",
     title: "Circular",
     description: "Dump & overburden slopes",
+    meta: "184 field cases · classifier",
     Preview: CircularPreview,
   },
   {
     id: "planar",
     title: "Planar",
     description: "Single discontinuity sliding",
+    meta: "149 cases · FoS model",
     Preview: PlanarPreview,
   },
   {
     id: "wedge",
     title: "Wedge",
     description: "Two-plane intersection",
+    meta: "280 solver cases · FoS model",
     Preview: WedgePreview,
   },
   {
     id: "toppling",
     title: "Toppling",
     description: "Column rotation about base",
+    meta: "600 solver cases · FoS model",
     Preview: TopplingPreview,
   },
 ];

@@ -78,6 +78,63 @@ function FitOnResize({
   return null;
 }
 
+/**
+ * Keeps the 3D annotation labels from printing on top of one another.
+ *
+ * Labels share vertices (e.g. three angle arcs at the planar toe) and their
+ * on-screen order changes with geometry and camera angle, so fixed offsets
+ * can't work. Instead, every frame: measure each label's real screen box,
+ * sort top-to-bottom, and push any label that collides with one already
+ * placed down until it clears. The nudge is written to the CSS `translate`
+ * property, which composes with (rather than overwrites) a label's own
+ * transform. A handful of labels → negligible cost; rAF pauses off-screen.
+ */
+function useLabelDeconflict(rootRef: React.RefObject<HTMLDivElement | null>, active: boolean) {
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !active) return;
+    const GAP = 2;
+    let raf = 0;
+
+    const tick = () => {
+      const els = Array.from(root.querySelectorAll<HTMLElement>("[data-viz-label]"));
+      if (els.length > 1) {
+        const items = els.map((el) => {
+          const r = el.getBoundingClientRect();
+          const cur = Number(el.dataset.dy || 0);
+          return { el, x: r.left, y: r.top - cur, w: r.width, h: r.height, cur };
+        });
+        items.sort((a, b) => a.y - b.y || a.x - b.x);
+        const placed: { x: number; y: number; w: number; h: number }[] = [];
+        for (const it of items) {
+          let y = it.y;
+          for (let pass = 0, moved = true; moved && pass < 12; pass++) {
+            moved = false;
+            for (const p of placed) {
+              const ix = Math.min(it.x + it.w, p.x + p.w) - Math.max(it.x, p.x);
+              const iy = Math.min(y + it.h, p.y + p.h) - Math.max(y, p.y);
+              if (ix > 0 && iy > 0) {
+                y = p.y + p.h + GAP;
+                moved = true;
+              }
+            }
+          }
+          const dy = Math.round(y - it.y);
+          if (dy !== it.cur) {
+            it.el.style.translate = dy ? `0 ${dy}px` : "";
+            it.el.dataset.dy = String(dy);
+          }
+          placed.push({ x: it.x, y, w: it.w, h: it.h });
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [rootRef, active]);
+}
+
 function Toggle({
   on,
   onClick,
@@ -92,10 +149,10 @@ function Toggle({
       type="button"
       onClick={onClick}
       className={[
-        "rounded-lg border px-2.5 py-1 text-[11.5px] font-medium transition-colors duration-200",
+        "rounded-lg border px-2.5 py-1 text-xs font-medium transition-colors duration-200",
         on
-          ? "border-[#ff9d55]/60 bg-[#ff9d55]/20 text-[#ffc490] backdrop-blur-md"
-          : "border-white/[0.12] bg-black/35 text-white/50 backdrop-blur-md hover:bg-black/50 hover:text-white/80",
+          ? "border-accent/60 bg-accent/20 text-accent-hover backdrop-blur-md"
+          : "border-glass-border bg-black/40 text-secondary backdrop-blur-md hover:bg-black/55 hover:text-primary",
       ].join(" ")}
     >
       {children}
@@ -118,6 +175,8 @@ export default function SlopeViz({ mode, params }: { mode: ModeId; params: Recor
 
   const sceneProps: SceneProps = { p: params, showAngles, showDims, showWater, wireframe, playing };
   const valid = Object.values(params).every((v) => Number.isFinite(v));
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useLabelDeconflict(wrapRef, valid);
 
   function resetView() {
     const c = controls.current;
@@ -130,7 +189,7 @@ export default function SlopeViz({ mode, params }: { mode: ModeId; params: Recor
   }
 
   return (
-    <div className="relative h-full w-full">
+    <div ref={wrapRef} className="relative h-full w-full">
       {valid ? (
         <Canvas
           camera={{ position: DEFAULT_CAM, fov: 42 }}
@@ -173,7 +232,7 @@ export default function SlopeViz({ mode, params }: { mode: ModeId; params: Recor
           </GizmoHelper>
         </Canvas>
       ) : (
-        <div className="flex h-full items-center justify-center px-6 text-center text-[13px] text-white/35">
+        <div className="flex h-full items-center justify-center px-6 text-center text-sm text-tertiary">
           Fix the out-of-range parameters to render the slope.
         </div>
       )}
@@ -210,7 +269,7 @@ export default function SlopeViz({ mode, params }: { mode: ModeId; params: Recor
         <button
           type="button"
           onClick={resetView}
-          className="rounded-lg border border-white/[0.12] bg-black/35 px-2.5 py-1 text-[11.5px] font-medium text-white/50 backdrop-blur-md transition-colors duration-200 hover:bg-black/50 hover:text-white/80"
+          className="rounded-lg border border-glass-border bg-black/40 px-2.5 py-1 text-xs font-medium text-secondary backdrop-blur-md transition-colors duration-200 hover:bg-black/55 hover:text-primary"
         >
           Reset view
         </button>

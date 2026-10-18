@@ -67,8 +67,8 @@ export default function SplitHandle({ orientation, disabled = false, onDrag, onR
           "rounded-full transition-all duration-200",
           horiz ? "h-[3px] w-14" : "h-14 w-[3px]",
           active
-            ? "bg-[#ff9d55]"
-            : "bg-white/15 group-hover:bg-[#ff9d55]/70 group-focus-visible:bg-[#ff9d55]/70",
+            ? "bg-accent"
+            : "bg-white/15 group-hover:bg-accent/70 group-focus-visible:bg-accent/70",
         ].join(" ")}
       />
       {/* widened invisible hit area so the 10px bar is easy to grab */}

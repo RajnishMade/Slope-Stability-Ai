@@ -10,26 +10,37 @@ export const WATER_COLOR = "#4aa3ff";
 const V = (x: number, y: number, z = 0) => new THREE.Vector3(x, y, z);
 export { V };
 
-/** Floating label that stays screen-readable regardless of camera angle. */
+/**
+ * Floating label that stays screen-readable regardless of camera angle.
+ * `offset` nudges it in screen pixels — used to keep labels whose 3D anchors
+ * can coincide (e.g. the two wedge joints) from printing on top of each other.
+ */
 export function Tag({
   position,
   children,
   color = ANGLE_COLOR,
+  offset,
 }: {
   position: THREE.Vector3;
   children: React.ReactNode;
   color?: string;
+  offset?: [number, number];
 }) {
   return (
     <Html position={position} center style={{ pointerEvents: "none" }}>
+      {/* data-viz-label: picked up by SlopeViz's overlap pass, which nudges
+          colliding labels apart via the CSS `translate` property */}
       <span
+        data-viz-label=""
         style={{
+          display: "inline-block",
           color,
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: 600,
           whiteSpace: "nowrap",
           textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7)",
-          fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif",
+          fontFamily: "var(--font-display)",
+          transform: offset ? `translate(${offset[0]}px, ${offset[1]}px)` : undefined,
         }}
       >
         {children}
@@ -49,6 +60,7 @@ export function AngleArc({
   radius,
   label,
   color = ANGLE_COLOR,
+  labelOffset,
 }: {
   vertex: THREE.Vector3;
   from: THREE.Vector3;
@@ -56,6 +68,8 @@ export function AngleArc({
   radius: number;
   label: string;
   color?: string;
+  /** screen-pixel nudge for the label — staggers arcs that share a vertex */
+  labelOffset?: [number, number];
 }) {
   const { pts, mid } = useMemo(() => {
     const u = from.clone().normalize();
@@ -79,7 +93,7 @@ export function AngleArc({
   return (
     <group>
       <Line points={pts} color={color} lineWidth={1.6} />
-      <Tag position={mid} color={color}>
+      <Tag position={mid} color={color} offset={labelOffset}>
         {label}
       </Tag>
     </group>
@@ -92,11 +106,14 @@ export function DimLine({
   to,
   label,
   color = DIM_COLOR,
+  labelOffset,
 }: {
   from: THREE.Vector3;
   to: THREE.Vector3;
   label: string;
   color?: string;
+  /** screen-pixel nudge for the label */
+  labelOffset?: [number, number];
 }) {
   const dir = useMemo(() => to.clone().sub(from).normalize(), [from, to]);
   const len = from.distanceTo(to);
@@ -122,7 +139,7 @@ export function DimLine({
         <coneGeometry args={[head * 0.4, head, 10]} />
         <meshBasicMaterial color={color} />
       </mesh>
-      <Tag position={mid} color={color}>
+      <Tag position={mid} color={color} offset={labelOffset}>
         {label}
       </Tag>
     </group>

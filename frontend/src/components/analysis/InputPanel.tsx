@@ -1,15 +1,28 @@
 import { ANALYSIS_CONFIG, fieldError, fieldsFor } from "../../data/analysisConfig";
 import type { ModeId } from "../../data/modes";
+import type { ModelMetrics } from "../../lib/api";
 import { useInputs } from "../../state/InputsProvider";
 import NumberField from "./NumberField";
 
 /**
  * Config-driven parameter panel. Sections and fields come entirely from
  * ANALYSIS_CONFIG, so schema changes never touch this component.
+ *
+ * `metrics` (when loaded) carries each model's training range per field, so
+ * the panel can flag extrapolated inputs live as they are typed.
  */
-export default function InputPanel({ mode, onRun }: { mode: ModeId; onRun: () => void }) {
+export default function InputPanel({
+  mode,
+  metrics,
+  onRun,
+}: {
+  mode: ModeId;
+  metrics: ModelMetrics | null;
+  onRun: () => void;
+}) {
   const { values, setValue, resetMode } = useInputs();
   const vals = values(mode);
+  const ranges = metrics?.dataset.ranges ?? {};
 
   const errors: Record<string, string | null> = {};
   for (const f of fieldsFor(mode)) errors[f.key] = fieldError(f, vals[f.key] ?? "");
@@ -18,15 +31,15 @@ export default function InputPanel({ mode, onRun }: { mode: ModeId; onRun: () =>
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-6 pt-6 pb-4">
-        <h2 className="mb-1 text-[15px] font-semibold text-[#f5f5f7]">Parameters</h2>
-        <p className="mb-6 text-[12.5px] text-[#f5f5f7]/45">
-          Values are pre-filled with typical defaults. Adjust as needed.
+        <h2 className="text-base font-semibold text-primary">Parameters</h2>
+        <p className="mt-1 mb-6 text-sm text-tertiary">
+          Pre-filled with typical values inside the model's training range.
         </p>
 
         <div className="flex flex-col gap-7">
           {ANALYSIS_CONFIG[mode].map((section) => (
             <section key={section.title}>
-              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#ff9d55]/85">
+              <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-accent">
                 {section.title}
               </h3>
               <div className="flex flex-col gap-4">
@@ -36,6 +49,7 @@ export default function InputPanel({ mode, onRun }: { mode: ModeId; onRun: () =>
                     field={f}
                     value={vals[f.key] ?? ""}
                     error={errors[f.key]}
+                    trainRange={ranges[f.key] ?? null}
                     onChange={(v) => setValue(mode, f.key, v)}
                   />
                 ))}
@@ -46,9 +60,9 @@ export default function InputPanel({ mode, onRun }: { mode: ModeId; onRun: () =>
       </div>
 
       {/* actions pinned to the bottom of the panel */}
-      <div className="shrink-0 border-t border-white/[0.07] bg-white/[0.03] px-6 py-4 backdrop-blur-md">
+      <div className="shrink-0 border-t border-glass-border bg-white/[0.03] px-6 py-4 backdrop-blur-md">
         {invalidCount > 0 && (
-          <p className="mb-3 text-[12px] text-[#ff6b5e]">
+          <p className="mb-3 text-sm text-critical-fg" role="alert">
             {invalidCount} field{invalidCount > 1 ? "s" : ""} out of range
           </p>
         )}
@@ -57,14 +71,14 @@ export default function InputPanel({ mode, onRun }: { mode: ModeId; onRun: () =>
             type="button"
             onClick={onRun}
             disabled={invalidCount > 0}
-            className="flex-1 rounded-xl bg-[#ff9d55] px-4 py-2.5 text-[14px] font-semibold text-[#231202] transition-all duration-200 hover:bg-[#ffb072] disabled:cursor-not-allowed disabled:bg-white/12 disabled:text-white/35"
+            className="flex-1 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-accent-ink shadow-[0_6px_20px_var(--color-accent-glow)] transition-colors duration-200 hover:bg-accent-hover disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-tertiary disabled:shadow-none"
           >
-            Run Prediction
+            Run prediction
           </button>
           <button
             type="button"
             onClick={() => resetMode(mode)}
-            className="rounded-xl border border-white/[0.12] bg-white/[0.05] px-4 py-2.5 text-[13px] text-[#f5f5f7]/80 backdrop-blur-md transition-colors duration-200 hover:border-white/25 hover:bg-white/[0.09] hover:text-[#f5f5f7]"
+            className="rounded-xl border border-glass-border bg-glass px-4 py-2.5 text-sm text-secondary transition-colors duration-200 hover:border-glass-border-hover hover:bg-glass-hover hover:text-primary"
           >
             Reset
           </button>

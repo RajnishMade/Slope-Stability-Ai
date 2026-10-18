@@ -51,20 +51,21 @@ function Panel({
   return (
     <section
       className={[
-        "flex min-h-0 flex-col overflow-hidden rounded-[24px] border border-white/[0.08]",
-        "bg-[rgba(24,28,34,0.66)] backdrop-blur-[16px] shadow-[0_16px_48px_rgba(0,0,0,0.45)]",
+        "flex min-h-0 flex-col overflow-hidden rounded-[22px] border border-glass-border",
+        "bg-panel backdrop-blur-[16px] shadow-[0_16px_48px_rgba(0,0,0,0.45)]",
         className,
       ].join(" ")}
     >
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/[0.07] bg-white/[0.02] px-5 py-2.5">
-        <h2 className="text-[12px] font-semibold uppercase tracking-[0.14em] text-[#f5f5f7]/60">{label}</h2>
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-glass-border bg-white/[0.02] px-5 py-2.5">
+        <h2 className="text-xs font-semibold uppercase tracking-[0.12em] text-tertiary">{label}</h2>
         {onToggle && (
           <button
             type="button"
             onClick={onToggle}
             aria-expanded={!collapsed}
+            aria-label={collapsed ? `Expand ${label}` : `Minimise ${label}`}
             title={collapsed ? `Expand ${label}` : `Minimise ${label}`}
-            className="flex h-6 w-6 items-center justify-center rounded-md text-white/40 transition-colors duration-200 hover:bg-white/8 hover:text-white/80"
+            className="flex h-7 w-7 items-center justify-center rounded-md text-tertiary transition-colors duration-200 hover:bg-glass-hover hover:text-primary"
           >
             <ChevronIcon up={!collapsed} />
           </button>
@@ -187,20 +188,24 @@ export default function AnalysisView() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.45, ease: EASE }}
       >
-        <header className="flex shrink-0 items-center gap-4 rounded-[20px] border border-white/[0.08] bg-[rgba(24,28,34,0.62)] px-5 py-3.5 shadow-[0_12px_36px_rgba(0,0,0,0.40)] backdrop-blur-[16px]">
+        <header className="flex shrink-0 items-center gap-4 rounded-[20px] border border-glass-border bg-panel px-5 py-3 shadow-[0_12px_36px_rgba(0,0,0,0.40)] backdrop-blur-[16px]">
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="flex shrink-0 items-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.06] px-3 py-2 text-[13px] text-[#f5f5f7]/85 backdrop-blur-md transition-colors duration-200 hover:border-white/25 hover:bg-white/[0.10] hover:text-[#f5f5f7]"
+            aria-label="All mechanisms"
+            className="flex shrink-0 items-center gap-2 rounded-xl border border-glass-border bg-glass px-3 py-2 text-sm text-secondary transition-colors duration-200 hover:border-glass-border-hover hover:bg-glass-hover hover:text-primary"
           >
-            <span aria-hidden>←</span> Modes
+            <span aria-hidden>←</span>
+            {/* label collapses to the arrow on phones so the page title has room */}
+            <span className="hidden sm:inline">All mechanisms</span>
           </button>
           <div className="min-w-0">
-            <h1 className="truncate text-[19px] font-semibold tracking-[-0.01em] text-[#f5f5f7]">
-              {mode.title} failure
-            </h1>
-            <p className="truncate text-[13px] text-[#f5f5f7]/50">{mode.description}</p>
+            <h1 className="truncate text-lg font-semibold tracking-[-0.01em] text-primary">{mode.title} failure</h1>
+            <p className="truncate text-sm text-tertiary">{mode.description}</p>
           </div>
+          <span className="ml-auto hidden shrink-0 rounded-full border border-glass-border bg-white/[0.04] px-3 py-1 text-xs text-tertiary sm:inline">
+            {mode.meta}
+          </span>
         </header>
 
         <div
@@ -208,10 +213,10 @@ export default function AnalysisView() {
           className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto lg:flex-row lg:gap-0 lg:overflow-hidden"
         >
           <aside
-            className="w-full shrink-0 overflow-hidden rounded-[24px] border border-white/[0.08] bg-[rgba(24,28,34,0.68)] shadow-[0_16px_48px_rgba(0,0,0,0.45)] backdrop-blur-[16px] lg:h-full"
+            className="w-full shrink-0 overflow-hidden rounded-[22px] border border-glass-border bg-panel shadow-[0_16px_48px_rgba(0,0,0,0.45)] backdrop-blur-[16px] lg:h-full"
             style={isWide ? { width: inputW } : undefined}
           >
-            <InputPanel mode={modeId} onRun={doRun} />
+            <InputPanel mode={modeId} metrics={metrics} onRun={doRun} />
           </aside>
 
           {/* column divider — width of the input panel */}
@@ -230,7 +235,9 @@ export default function AnalysisView() {
             style={
               isWide
                 ? { gridTemplateRows: gridRows }
-                : { gridTemplateRows: `minmax(320px, auto) 0px minmax(260px, auto)`, rowGap: 16 }
+                : // stacked (mobile/tablet): give results enough height for the
+                  // headline, verdict and key-figure tiles without a cramped inner scroll
+                  { gridTemplateRows: `minmax(320px, auto) 0px minmax(600px, auto)`, rowGap: 16 }
             }
           >
             <Panel

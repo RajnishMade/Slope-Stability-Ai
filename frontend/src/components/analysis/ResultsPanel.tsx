@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { METHOD, dgmsThreshold, outOfRange } from "../../lib/api";
+import { API_BASE, METHOD, dgmsThreshold, outOfRange } from "../../lib/api";
 import type { ModelMetrics, Prediction, Sensitivity } from "../../lib/api";
 import type { ModeId } from "../../data/modes";
 import { fieldsFor } from "../../data/analysisConfig";
@@ -21,37 +21,104 @@ export type SensState =
   | { status: "running"; done: number; total: number }
   | { status: "done"; items: Sensitivity[] };
 
-const GREEN = "#30d158";
-const AMBER = "#ff9f0a";
-const RED = "#ff453a";
+/* Status colours come from the design tokens (index.css). */
+const SAFE = "var(--color-safe)";
+const WARN = "var(--color-warning)";
+const CRIT = "var(--color-critical)";
 
-function verdictColor(fos: number, threshold: number) {
-  if (fos >= threshold) return GREEN;
-  if (fos >= threshold * 0.9) return AMBER;
-  return RED;
+type Tone = "safe" | "warn" | "crit" | "neutral";
+const TONE_TEXT: Record<Tone, string> = {
+  safe: "text-safe-fg",
+  warn: "text-warning-fg",
+  crit: "text-critical-fg",
+  neutral: "text-primary",
+};
+
+function fosTone(fos: number, threshold: number): Tone {
+  if (fos >= threshold) return "safe";
+  if (fos >= threshold * 0.9) return "warn";
+  return "crit";
+}
+
+/**
+ * A short reliability caveat shown under the headline, so the model's known
+ * limitations travel with every result: synthetic-trained (wedge/toppling),
+ * classifier-not-FoS (circular), or field-informed (planar).
+ */
+function reliabilityBadge(mode: ModeId): { text: string; tone: "amber" | "neutral" } {
+  switch (mode) {
+    case "wedge":
+    case "toppling":
+      return { text: "Synthetic solver-trained · screening only, not field-validated", tone: "amber" };
+    case "circular":
+      return { text: "Classifier on real cases · screening only (~21% missed failures in testing)", tone: "amber" };
+    default:
+      return { text: "Trained on field + textbook cases", tone: "neutral" };
+  }
 }
 
 function Row({ label, value, muted = false }: { label: string; value: React.ReactNode; muted?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-white/6 py-1 last:border-b-0">
-      <span className="text-[12px] text-white/45">{label}</span>
-      <span className={`text-[12.5px] tabular-nums ${muted ? "text-white/30" : "text-white/85"}`}>{value}</span>
+    <div className="flex items-baseline justify-between gap-4 border-b border-glass-border/60 py-1.5 last:border-b-0">
+      <span className="text-sm text-tertiary">{label}</span>
+      <span className={`text-right text-sm tabular-nums ${muted ? "text-tertiary" : "text-primary"}`}>{value}</span>
     </div>
+  );
+}
+
+/** A key figure: small label over a large value. */
+function Tile({ label, value, sub, tone = "neutral" }: { label: string; value: React.ReactNode; sub?: string; tone?: Tone }) {
+  return (
+    <div className="rounded-xl border border-glass-border bg-white/[0.035] px-3.5 py-3">
+      <div className="text-xs text-tertiary">{label}</div>
+      <div className={`mt-1 text-lg font-semibold tabular-nums tracking-[-0.01em] ${TONE_TEXT[tone]}`}>{value}</div>
+      {sub && <div className="mt-0.5 text-xs text-tertiary">{sub}</div>}
+    </div>
+  );
+}
+
+/** Collapsible detail section (native <details> — keyboard + screen-reader friendly). */
+function Details({
+  title,
+  hint,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  hint?: React.ReactNode;
+  defaultOpen?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <details className="group" open={defaultOpen}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-white/[0.03] [&::-webkit-details-marker]:hidden">
+        <span>{title}</span>
+        <span className="flex items-center gap-2 text-xs font-normal text-tertiary">
+          {hint}
+          <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden className="transition-transform duration-200 group-open:rotate-180">
+            <path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </summary>
+      <div className="px-4 pb-4">{children}</div>
+    </details>
   );
 }
 
 function Skeleton() {
   return (
-    <div className="p-5">
-      <p className="mb-4 text-[12.5px] text-white/45">Running prediction…</p>
+    <div className="p-5" aria-busy="true" aria-live="polite">
+      <p className="mb-1 text-sm text-secondary">Running prediction…</p>
+      <p className="mb-5 text-xs text-tertiary">The first run for a mechanism can take a few seconds while its model loads.</p>
       <div className="animate-pulse space-y-4">
-        <div className="h-12 w-40 rounded-lg bg-white/8" />
-        <div className="h-3 w-64 rounded bg-white/6" />
-        <div className="grid grid-cols-2 gap-3 pt-2">
-          <div className="h-24 rounded-xl bg-white/5" />
-          <div className="h-24 rounded-xl bg-white/5" />
+        <div className="h-12 w-44 rounded-lg bg-white/8" />
+        <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-[68px] rounded-xl bg-white/5" />
+          ))}
         </div>
-        <div className="h-3 w-48 rounded bg-white/6" />
+        <div className="h-3 w-3/4 rounded bg-white/6" />
+        <div className="h-3 w-1/2 rounded bg-white/6" />
       </div>
     </div>
   );
@@ -59,17 +126,15 @@ function Skeleton() {
 
 function Disclaimer() {
   return (
-    <div className="flex shrink-0 items-start gap-2 border-t border-white/[0.07] bg-white/[0.03] px-4 py-2 backdrop-blur-md">
-      <svg width="13" height="13" viewBox="0 0 16 16" className="mt-[2px] shrink-0" aria-hidden>
-        <circle cx="8" cy="8" r="7" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.2" />
-        <rect x="7.3" y="6.6" width="1.4" height="5" rx="0.7" fill="rgba(255,255,255,0.55)" />
-        <circle cx="8" cy="4.6" r="0.85" fill="rgba(255,255,255,0.55)" />
+    <div className="flex shrink-0 items-start gap-2 border-t border-glass-border bg-white/[0.03] px-4 py-2.5 backdrop-blur-md">
+      <svg width="14" height="14" viewBox="0 0 16 16" className="mt-px shrink-0 text-tertiary" aria-hidden>
+        <circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" strokeWidth="1.2" />
+        <rect x="7.3" y="6.6" width="1.4" height="5" rx="0.7" fill="currentColor" />
+        <circle cx="8" cy="4.6" r="0.85" fill="currentColor" />
       </svg>
-      <p className="text-[10.5px] leading-[1.5] text-white/40">
-        These results are generated by a machine-learning model and may contain errors. They must not be
-        relied upon as the sole basis for slope design or operational decisions. All outputs require
-        verification by a competent person against site-specific ground investigation data and the
-        applicable DGMS regulations before use.
+      <p className="text-xs leading-relaxed text-tertiary">
+        Model-generated results may contain errors and must not be the sole basis for slope design or operational
+        decisions. Verify against site-specific data and the applicable DGMS regulations before use.
       </p>
     </div>
   );
@@ -80,12 +145,8 @@ function labelFor(mode: ModeId, key: string): string {
   return fieldsFor(mode).find((f) => f.key === key)?.label ?? key;
 }
 
-/**
- * Above this panel width the results split into two columns; below it — a
- * tablet-ish viewport, or the panel dragged narrow — everything stacks so
- * nothing gets crushed.
- */
-const TWO_COL_MIN_W = 820;
+/** Above this panel width the key-figure tiles sit in one row of four. */
+const WIDE_MIN_W = 620;
 
 /**
  * Tracks an element's width so content can reflow to the space it has.
@@ -113,6 +174,9 @@ function useWidth<T extends HTMLElement>() {
   return [ref, w] as const;
 }
 
+const btn =
+  "rounded-lg border border-glass-border bg-glass px-3 py-1.5 text-sm text-secondary transition-colors hover:border-glass-border-hover hover:bg-glass-hover hover:text-primary";
+
 export default function ResultsPanel({
   mode,
   state,
@@ -131,9 +195,9 @@ export default function ResultsPanel({
   const [copied, setCopied] = useState(false);
   // measured before any early return — hook order must stay stable
   const [scrollRef, panelW] = useWidth<HTMLDivElement>();
-  const twoCol = panelW >= TWO_COL_MIN_W;
+  const wide = panelW >= WIDE_MIN_W;
   const meta = METHOD[mode];
-  const dgms = dgmsThreshold(mode);
+  const dgms = dgmsThreshold();
 
   function reportText(): string {
     if (state.status !== "done") return "";
@@ -153,8 +217,10 @@ export default function ResultsPanel({
     if (state.prediction.kind === "fos") {
       const fos = state.prediction.fos;
       lines.push(`  Predicted FoS: ${fos.toFixed(3)}`);
-      lines.push(`  DGMS minimum (${dgms.material}): ${dgms.value}`);
-      lines.push(`  Assessment: ${fos >= dgms.value ? "PASSES" : "BELOW THRESHOLD"}`);
+      lines.push(
+        `  DGMS minimum FoS (Circular 03/2020, para 3.2): ${dgms.value.toFixed(2)} working / ${dgms.permanent.toFixed(2)} permanent`
+      );
+      lines.push(`  Assessment vs working minimum: ${fos >= dgms.value ? "MEETS" : "BELOW THRESHOLD"}`);
     } else {
       lines.push(`  Classification: ${state.prediction.label}`);
       lines.push(`  Failure probability: ${(state.prediction.failureProbability * 100).toFixed(1)}%`);
@@ -194,10 +260,16 @@ export default function ResultsPanel({
   if (state.status === "idle") {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex flex-1 items-center justify-center px-6">
-          <p className="max-w-sm text-center text-[13px] text-white/28">
-            Set your parameters and run the prediction to see the factor of safety, model
-            accuracy and interpretation.
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-glass-border bg-glass text-accent" aria-hidden>
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6">
+              <path d="M3 16h14M5 16V11M9 16V7M13 16V9M17 16V4" strokeLinecap="round" />
+            </svg>
+          </span>
+          <p className="text-base font-medium text-primary">No prediction yet</p>
+          <p className="max-w-sm text-sm text-tertiary">
+            Set the parameters and press <span className="text-secondary">Run prediction</span> to see the factor of
+            safety, DGMS check and key figures.
           </p>
         </div>
         <Disclaimer />
@@ -219,16 +291,12 @@ export default function ResultsPanel({
   if (state.status === "error") {
     return (
       <div className="flex h-full flex-col">
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <p className="text-[13px] text-[#ff6b5e]">{state.message}</p>
-          <p className="text-[11.5px] text-white/35">
-            The solver API must be running at <code>localhost:8000</code>.
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center" role="alert">
+          <p className="text-base font-medium text-critical-fg">{state.message}</p>
+          <p className="text-sm text-tertiary">
+            The prediction API must be reachable at <code className="text-secondary">{API_BASE}</code>.
           </p>
-          <button
-            type="button"
-            onClick={onRerun}
-            className="rounded-lg border border-white/16 px-3 py-1.5 text-[12px] text-white/75 hover:border-white/32"
-          >
+          <button type="button" onClick={onRerun} className={btn}>
             Retry
           </button>
         </div>
@@ -241,275 +309,309 @@ export default function ResultsPanel({
   const pred = state.prediction;
   const isFos = pred.kind === "fos";
   const fos = isFos ? pred.fos : null;
-  const color = isFos ? verdictColor(pred.fos, dgms.value) : pred.failureProbability > 0.5 ? RED : GREEN;
+  const tone: Tone = isFos ? fosTone(pred.fos, dgms.value) : pred.failureProbability > 0.5 ? "crit" : "safe";
+  const headColor = tone === "safe" ? SAFE : tone === "warn" ? WARN : CRIT;
   const passes = isFos ? pred.fos >= dgms.value : pred.label !== "UNSTABLE";
+  const flags = metrics ? outOfRange(metrics, state.params) : [];
+  const badge = reliabilityBadge(mode);
+
+  const verdict = isFos
+    ? passes
+      ? { text: `Meets DGMS minimum (${dgms.value.toFixed(2)})`, tone: "safe" as Tone }
+      : tone === "warn"
+        ? { text: `Marginal — below DGMS ${dgms.value.toFixed(2)}`, tone: "warn" as Tone }
+        : { text: `Below DGMS minimum (${dgms.value.toFixed(2)})`, tone: "crit" as Tone }
+    : { text: `${(pred.failureProbability * 100).toFixed(1)}% failure probability`, tone };
+
+  const pillCls: Record<Tone, string> = {
+    safe: "border-safe/40 bg-safe/12 text-safe-fg",
+    warn: "border-warning/40 bg-warning/12 text-warning-fg",
+    crit: "border-critical/40 bg-critical/12 text-critical-fg",
+    neutral: "border-glass-border bg-glass text-secondary",
+  };
+
+  // prefer the 5-fold CV figure (mean ± std); fall back to the single held-out split
+  const cv = metrics?.cv;
+  const r2Text = cv?.r2 ? `${cv.r2.mean.toFixed(2)} ± ${cv.r2.std.toFixed(2)}` : metrics?.metrics.r2?.toFixed(3) ?? "—";
+  const accText = cv?.accuracy
+    ? `${(cv.accuracy.mean * 100).toFixed(0)}% ± ${(cv.accuracy.std * 100).toFixed(0)}`
+    : metrics?.metrics.accuracy != null
+      ? `${(metrics.metrics.accuracy * 100).toFixed(0)}%`
+      : "—";
+  const rmse = metrics?.metrics.rmse;
+  const band = fos != null && rmse != null ? [Math.max(0, fos - 1.96 * rmse), fos + 1.96 * rmse] : null;
+  const margin = fos != null ? ((fos - dgms.value) / dgms.value) * 100 : null;
+
+  const sensHint =
+    sens.status === "idle" ? "Not measured" : sens.status === "running" ? `Measuring ${sens.done}/${sens.total}…` : "Top 5";
 
   return (
     <div className="flex h-full flex-col">
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-2.5">
-        {/* headline — full width across the top */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            {isFos ? (
-              <>
-                <div className="flex items-baseline gap-2.5">
-                  <span className="text-[38px] font-semibold leading-none tabular-nums" style={{ color }}>
-                    {fos!.toFixed(2)}
-                  </span>
-                  <span className="text-[13px] text-white/45">Factor of Safety</span>
-                </div>
-                <p className="mt-1.5 text-[12.5px] text-white/55">
-                  DGMS minimum for {dgms.material}: <span className="text-white/80">{dgms.value.toFixed(1)}</span> —{" "}
-                  <span style={{ color }}>{passes ? "slope passes" : "below threshold"}</span>
-                </p>
-              </>
-            ) : (
-              <>
-                <div className="flex items-baseline gap-2.5">
-                  <span className="text-[34px] font-semibold leading-none" style={{ color }}>
-                    {pred.label}
-                  </span>
-                  <span className="text-[13px] text-white/45">
-                    {(pred.failureProbability * 100).toFixed(1)}% failure probability
-                  </span>
-                </div>
-                <p className="mt-1.5 text-[12.5px] text-white/55">
-                  This mode uses a stability <em>classifier</em> — it does not return a numeric FoS, so the
-                  DGMS {dgms.value.toFixed(1)} ({dgms.material}) threshold cannot be applied directly.
-                </p>
-              </>
-            )}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4">
+        {/* ---- headline ---- */}
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
+              <span
+                className="text-5xl font-semibold leading-none tracking-[-0.03em] tabular-nums"
+                style={{ color: headColor }}
+              >
+                {isFos ? fos!.toFixed(2) : pred.label}
+              </span>
+              <div className="pb-0.5">
+                <div className="text-sm text-tertiary">{isFos ? "Factor of safety" : "Stability class"}</div>
+                <span
+                  className={`mt-1 inline-flex rounded-full border px-2.5 py-0.5 text-xs font-medium ${pillCls[verdict.tone]}`}
+                >
+                  {verdict.text}
+                </span>
+              </div>
+            </div>
+            <span
+              className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs ${
+                badge.tone === "amber"
+                  ? "border-warning/35 bg-warning/10 text-warning-fg"
+                  : "border-glass-border bg-white/[0.04] text-tertiary"
+              }`}
+            >
+              {badge.tone === "amber" && <span aria-hidden>⚠</span>}
+              {badge.text}
+            </span>
           </div>
 
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={copy}
-              className="rounded-lg border border-white/[0.12] bg-white/[0.05] px-2.5 py-1.5 text-[11.5px] text-white/75 backdrop-blur-md hover:border-white/25 hover:bg-white/[0.09]"
-            >
+            <button type="button" onClick={copy} className={btn}>
               {copied ? "Copied" : "Copy"}
             </button>
-            <button
-              type="button"
-              onClick={exportReport}
-              className="rounded-lg border border-white/[0.12] bg-white/[0.05] px-2.5 py-1.5 text-[11.5px] text-white/75 backdrop-blur-md hover:border-white/25 hover:bg-white/[0.09]"
-            >
+            <button type="button" onClick={exportReport} className={btn}>
               Export
             </button>
             <button
               type="button"
               onClick={onRerun}
-              className="rounded-lg bg-[#ff9d55]/90 px-2.5 py-1.5 text-[11.5px] font-semibold text-[#231202] hover:bg-[#ffb072]"
+              className="rounded-lg bg-accent px-3 py-1.5 text-sm font-semibold text-accent-ink transition-colors hover:bg-accent-hover"
             >
               Re-run
             </button>
           </div>
         </div>
 
-        {/* the four detail boxes fill the width as a two-column band;
-            stacks when the panel is dragged narrow or below tablet width */}
-        <div className={twoCol ? "mt-2.5 grid grid-cols-2 items-start gap-2.5" : "mt-2.5 flex flex-col gap-2.5"}>
-          {/* LEFT — method + model accuracy */}
-          <div className="flex min-w-0 flex-col gap-2.5">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.045] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
-                Method
-              </h3>
-              <Row label="Analysis" value={meta.method} />
-              <Row label="Model" value={meta.model} />
-              <Row label="Training data" value={meta.data} />
-              <Row label="Run at" value={state.at.toLocaleTimeString()} />
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.045] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
-                Model Accuracy Detail
-              </h3>
-              {!metrics ? (
-                <p className="text-[12px] text-white/30">Model metrics unavailable.</p>
-              ) : isFos ? (
-                <>
-                  <Row label="Validation R²" value={metrics.metrics.r2?.toFixed(3) ?? "—"} />
-                  <Row label="RMSE (test)" value={`±${metrics.metrics.rmse?.toFixed(3)} FoS`} />
-                  <Row label="MAE (test)" value={`±${metrics.metrics.mae?.toFixed(3)} FoS`} />
-                  {fos != null && metrics.metrics.rmse != null && (
-                    <Row
-                      label="95% prediction band"
-                      value={`${Math.max(0, fos - 1.96 * metrics.metrics.rmse).toFixed(2)} – ${(
-                        fos +
-                        1.96 * metrics.metrics.rmse
-                      ).toFixed(2)}`}
-                    />
-                  )}
-                  <Row label="Held-out cases" value={`${metrics.metrics.n_test} of ${metrics.dataset.rows}`} muted />
-                  <p className="mt-1.5 line-clamp-2 text-[10.5px] leading-relaxed text-white/32">
-                    {metrics.plain} Band is ±1.96 × validation RMSE.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Row label="Validation accuracy" value={`${((metrics.metrics.accuracy ?? 0) * 100).toFixed(0)}%`} />
-                  <Row label="ROC-AUC" value={metrics.metrics.roc_auc?.toFixed(3) ?? "—"} />
-                  <Row label="This prediction" value={`${(pred.failureProbability * 100).toFixed(1)}% failure prob.`} />
-                  <Row label="Held-out cases" value={`${metrics.metrics.n_test} of ${metrics.dataset.rows}`} muted />
-                  <p className="mt-1.5 line-clamp-2 text-[10.5px] leading-relaxed text-white/32">{metrics.plain}</p>
-                </>
-              )}
-            </div>
+        {/* ---- extrapolation alert (never hidden in a collapsed section) ---- */}
+        {flags.length > 0 && (
+          <div className="mt-4 rounded-xl border border-warning/35 bg-warning/10 px-4 py-3" role="alert">
+            <p className="text-sm font-medium text-warning-fg">
+              ⚠ {flags.length} input{flags.length > 1 ? "s are" : " is"} outside the training range — treat this
+              result with extra caution.
+            </p>
+            <ul className="mt-1.5 space-y-0.5">
+              {flags.map((f) => (
+                <li key={f.key} className="text-xs text-warning-fg/90">
+                  {labelFor(mode, f.key)} = {f.value} (trained {f.min}–{f.max})
+                </li>
+              ))}
+            </ul>
           </div>
+        )}
 
-          {/* RIGHT — dataset provenance + sensitivity */}
-          <div className="flex min-w-0 flex-col gap-2.5">
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.045] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
-                Dataset information
-              </h3>
-              {!metrics ? (
-                <p className="text-[12px] text-white/30">Dataset information unavailable.</p>
-              ) : (
-                (() => {
-                  const d = metrics.dataset;
-                  const flags = outOfRange(metrics, state.params);
-                  const source =
-                    d.source_kind === "mixed"
-                      ? `Mixed — ${d.real_pct}% real / ${d.synthetic_pct}% synthetic`
-                      : d.source_kind === "real"
-                        ? "Real-world field data"
-                        : "Synthetic (solver-generated)";
-                  return (
-                    <>
-                      <Row label="Data source" value={source} />
-                      <Row label="Training rows" value={d.rows} />
-                      <Row label="Input features" value={d.n_features} />
-                      <Row
-                        label="Within training range"
-                        value={
-                          flags.length === 0 ? (
-                            <span style={{ color: GREEN }}>✓ all inputs in range</span>
-                          ) : (
-                            <span style={{ color: AMBER }}>⚠ {flags.length} outside</span>
-                          )
-                        }
-                      />
-                      {flags.length > 0 && (
-                        <div className="mt-1.5 rounded-lg border border-[#ff9f0a]/25 bg-[#ff9f0a]/8 p-2">
-                          <p className="text-[10.5px] leading-relaxed text-[#ffcf80]">
-                            Extrapolating beyond training data — treat with extra caution:
-                          </p>
-                          <ul className="mt-1 space-y-0.5">
-                            {flags.map((f) => (
-                              <li key={f.key} className="text-[10.5px] text-[#ffcf80]/85">
-                                {labelFor(mode, f.key)} = {f.value} (trained {f.min}–{f.max})
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      <p className="mt-1.5 line-clamp-3 text-[10.5px] leading-relaxed text-white/32" title={d.provenance}>{d.provenance}</p>
-                    </>
-                  );
-                })()
-              )}
-            </div>
-
-            <div className="rounded-2xl border border-white/[0.08] bg-white/[0.045] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-              <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
-                Most influential parameters
-              </h3>
-
-              {sens.status === "idle" && (
-                <>
-                  <p className="mb-2.5 text-[12px] leading-relaxed text-white/45">
-                    Measured empirically by re-querying the model once per parameter.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={onMeasureSensitivity}
-                    className="rounded-lg border border-white/[0.14] bg-white/[0.06] px-3 py-1.5 text-[12px] text-white/85 backdrop-blur-md hover:border-white/28 hover:bg-white/[0.10]"
-                  >
-                    Measure sensitivity
-                  </button>
-                  <p className="mt-2 text-[10.5px] text-white/32">
-                    {sens.probes} model queries, roughly {sens.etaSec}s.
-                  </p>
-                </>
-              )}
-
-              {sens.status === "running" && (
-                <>
-                  <p className="mb-2 text-[12px] text-white/55">
-                    Probing parameter {sens.done} of {sens.total}…
-                  </p>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
-                    <div
-                      className="h-full rounded-full bg-[#ff9d55] transition-all duration-300"
-                      style={{ width: `${(sens.done / sens.total) * 100}%` }}
-                    />
-                  </div>
-                </>
-              )}
-
-              {sens.status === "done" &&
-                (sens.items.length === 0 ? (
-                  <p className="text-[12px] text-white/30">Sensitivity unavailable.</p>
-                ) : (
-                  <>
-                    {sens.items.map((s) => (
-                      <Row
-                        key={s.key}
-                        label={s.label}
-                        value={
-                          <span style={{ color: s.direction === "up" ? GREEN : s.direction === "down" ? RED : "#8b8b90" }}>
-                            {s.direction === "up" ? "↑ raises" : s.direction === "down" ? "↓ lowers" : "· negligible"}
-                          </span>
-                        }
-                      />
-                    ))}
-                    <p className="mt-1.5 line-clamp-2 text-[10.5px] leading-relaxed text-white/32">
-                      Each parameter nudged by 5% of its range; direction is the model's own response.
-                    </p>
-                  </>
-                ))}
-            </div>
-          </div>
+        {/* ---- key figures ---- */}
+        <div className={`mt-4 grid gap-2.5 ${wide ? "grid-cols-4" : "grid-cols-2"}`}>
+          {isFos ? (
+            <>
+              <Tile
+                label="95% prediction band"
+                value={band ? `${band[0].toFixed(2)} – ${band[1].toFixed(2)}` : "—"}
+                sub="± 1.96 × validation RMSE"
+              />
+              <Tile
+                label={`Margin vs ${dgms.value.toFixed(2)}`}
+                value={margin != null ? `${margin >= 0 ? "+" : ""}${margin.toFixed(0)}%` : "—"}
+                tone={margin != null ? (margin >= 0 ? "safe" : "crit") : "neutral"}
+                sub="working slope"
+              />
+              <Tile
+                label={`Permanent slope (${dgms.permanent.toFixed(2)})`}
+                value={fos! >= dgms.permanent ? "Meets" : "Below"}
+                tone={fos! >= dgms.permanent ? "safe" : "crit"}
+                sub="long-standing walls"
+              />
+              <Tile label="Model R² (held-out)" value={r2Text} sub={cv?.r2 ? "5-fold cross-validation" : "test split"} />
+            </>
+          ) : (
+            <>
+              <Tile
+                label="Failure probability"
+                value={`${(pred.failureProbability * 100).toFixed(1)}%`}
+                tone={pred.failureProbability > 0.5 ? "crit" : "safe"}
+              />
+              <Tile label="Stable probability" value={`${(pred.stableProbability * 100).toFixed(1)}%`} />
+              <Tile label="Model accuracy" value={accText} sub={cv?.accuracy ? "5-fold cross-validation" : "test split"} />
+              <Tile
+                label="ROC-AUC"
+                value={cv?.roc_auc ? cv.roc_auc.mean.toFixed(2) : metrics?.metrics.roc_auc?.toFixed(2) ?? "—"}
+                sub="ranking quality"
+              />
+            </>
+          )}
         </div>
 
-        {/* interpretation — full width across the bottom */}
-        <div className="mt-2.5">
-          <div className="rounded-2xl border border-white/[0.08] bg-white/[0.045] p-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-          <h3 className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-white/45">
-            Interpretation
-          </h3>
-          <p className="text-[12.5px] leading-relaxed text-white/70">
+        {/* ---- interpretation ---- */}
+        <div className="mt-4 rounded-xl border border-glass-border bg-white/[0.035] px-4 py-3.5">
+          <h3 className="text-xs font-semibold uppercase tracking-[0.12em] text-tertiary">Interpretation</h3>
+          <p className="mt-1.5 text-sm leading-relaxed text-secondary">
             {isFos ? (
               passes ? (
                 <>
-                  The predicted factor of safety of <strong>{fos!.toFixed(2)}</strong> exceeds the DGMS minimum
-                  of {dgms.value.toFixed(1)} for {dgms.material} slopes, so this geometry is predicted to be
-                  stable under the entered conditions. The margin is{" "}
-                  {(((fos! - dgms.value) / dgms.value) * 100).toFixed(0)}% above the threshold.
+                  The predicted factor of safety of <strong className="text-primary">{fos!.toFixed(2)}</strong> meets the
+                  DGMS working-slope minimum of {dgms.value.toFixed(2)} by {margin!.toFixed(0)}%.
+                  {fos! < dgms.permanent
+                    ? ` It is below the ${dgms.permanent.toFixed(2)} required for permanent or long-standing slopes.`
+                    : ` It also meets the ${dgms.permanent.toFixed(2)} required for permanent slopes.`}
                 </>
               ) : (
                 <>
-                  The predicted factor of safety of <strong>{fos!.toFixed(2)}</strong> falls below the DGMS
-                  minimum of {dgms.value.toFixed(1)} for {dgms.material} slopes. This geometry should be
-                  treated as inadequate as entered — flattening the slope, lowering it, or improving drainage
-                  are the usual levers.
+                  The predicted factor of safety of <strong className="text-primary">{fos!.toFixed(2)}</strong> is below
+                  the DGMS working-slope minimum of {dgms.value.toFixed(2)}. Treat this geometry as inadequate as entered —
+                  flattening or lowering the slope, or improving drainage, are the usual levers.
                 </>
               )
             ) : (
               <>
-                The model classifies this slope as <strong>{pred.label}</strong> with a{" "}
-                {(pred.failureProbability * 100).toFixed(1)}% failure probability. Treat this as a screening
-                indicator only; a numeric factor of safety is required for a DGMS compliance assessment.
+                The model classifies this slope as <strong className="text-primary">{pred.label}</strong> with a{" "}
+                {(pred.failureProbability * 100).toFixed(1)}% failure probability. Treat this as a screening indicator; a
+                numeric factor of safety is required for a DGMS compliance assessment (≥ {dgms.value.toFixed(2)} working,
+                ≥ {dgms.permanent.toFixed(2)} permanent).
               </>
             )}
           </p>
-          </div>
         </div>
-            </div>
 
-      {/* spans the full panel width, beneath both columns */}
+        {/* ---- details ---- */}
+        <div className="mt-4 divide-y divide-glass-border overflow-hidden rounded-xl border border-glass-border">
+          <Details title="Most influential parameters" hint={sensHint}>
+            {sens.status === "idle" && (
+              <>
+                <p className="mb-3 text-sm leading-relaxed text-tertiary">
+                  Measured empirically by re-querying the model once per parameter ({sens.probes} queries, about{" "}
+                  {sens.etaSec}s).
+                </p>
+                <button type="button" onClick={onMeasureSensitivity} className={btn}>
+                  Measure sensitivity
+                </button>
+              </>
+            )}
+
+            {sens.status === "running" && (
+              <>
+                <p className="mb-2 text-sm text-secondary">
+                  Probing parameter {sens.done} of {sens.total}…
+                </p>
+                <div
+                  className="h-1.5 w-full overflow-hidden rounded-full bg-white/10"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={sens.total}
+                  aria-valuenow={sens.done}
+                >
+                  <div
+                    className="h-full rounded-full bg-accent transition-all duration-300"
+                    style={{ width: `${(sens.done / sens.total) * 100}%` }}
+                  />
+                </div>
+              </>
+            )}
+
+            {sens.status === "done" &&
+              (sens.items.length === 0 ? (
+                <p className="text-sm text-tertiary">Sensitivity unavailable.</p>
+              ) : (
+                <>
+                  {sens.items.map((s) => (
+                    <Row
+                      key={s.key}
+                      label={s.label}
+                      value={
+                        <span
+                          className={
+                            s.direction === "up" ? "text-safe-fg" : s.direction === "down" ? "text-critical-fg" : "text-tertiary"
+                          }
+                        >
+                          {s.direction === "up" ? "↑ raises" : s.direction === "down" ? "↓ lowers" : "· negligible"}
+                        </span>
+                      }
+                    />
+                  ))}
+                  <p className="mt-2 text-xs leading-relaxed text-tertiary">
+                    Each parameter nudged by 5% of its range; direction is the model's own response.
+                  </p>
+                </>
+              ))}
+          </Details>
+
+          <Details title="Model accuracy detail">
+            {!metrics ? (
+              <p className="text-sm text-tertiary">Model metrics unavailable.</p>
+            ) : isFos ? (
+              <>
+                <Row label="R² — test split" value={metrics.metrics.r2?.toFixed(3) ?? "—"} />
+                {cv?.r2 && <Row label="R² — 5-fold CV" value={r2Text} />}
+                <Row label="RMSE (test)" value={`±${metrics.metrics.rmse?.toFixed(3)} FoS`} />
+                <Row label="MAE (test)" value={`±${metrics.metrics.mae?.toFixed(3)} FoS`} />
+                <Row label="Held-out cases" value={`${metrics.metrics.n_test} of ${metrics.dataset.rows}`} muted />
+                <p className="mt-2 text-xs leading-relaxed text-tertiary">{metrics.plain}</p>
+              </>
+            ) : (
+              <>
+                <Row label="Accuracy — test split" value={`${((metrics.metrics.accuracy ?? 0) * 100).toFixed(0)}%`} />
+                {cv?.accuracy && <Row label="Accuracy — 5-fold CV" value={accText} />}
+                <Row label="ROC-AUC (test)" value={metrics.metrics.roc_auc?.toFixed(3) ?? "—"} />
+                <Row label="Held-out cases" value={`${metrics.metrics.n_test} of ${metrics.dataset.rows}`} muted />
+                <p className="mt-2 text-xs leading-relaxed text-tertiary">{metrics.plain}</p>
+              </>
+            )}
+          </Details>
+
+          <Details
+            title="Dataset information"
+            hint={
+              metrics ? (
+                flags.length === 0 ? (
+                  <span className="text-safe-fg">✓ inputs in range</span>
+                ) : (
+                  <span className="text-warning-fg">⚠ {flags.length} outside</span>
+                )
+              ) : undefined
+            }
+          >
+            {!metrics ? (
+              <p className="text-sm text-tertiary">Dataset information unavailable.</p>
+            ) : (
+              <>
+                <Row
+                  label="Data source"
+                  value={
+                    metrics.dataset.source_kind === "mixed"
+                      ? `Mixed — ${metrics.dataset.real_pct}% real / ${metrics.dataset.synthetic_pct}% synthetic`
+                      : metrics.dataset.source_kind === "real"
+                        ? "Real-world field data"
+                        : "Synthetic (solver-generated)"
+                  }
+                />
+                <Row label="Training rows" value={metrics.dataset.rows} />
+                <Row label="Input features" value={metrics.dataset.n_features} />
+                <p className="mt-2 text-xs leading-relaxed text-tertiary">{metrics.dataset.provenance}</p>
+              </>
+            )}
+          </Details>
+
+          <Details title="Method">
+            <Row label="Analysis" value={meta.method} />
+            <Row label="Model" value={meta.model} />
+            <Row label="Training data" value={meta.data} />
+            <Row label="Run at" value={state.at.toLocaleTimeString()} />
+          </Details>
+        </div>
+      </div>
+
       <Disclaimer />
     </div>
   );

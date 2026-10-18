@@ -14,11 +14,12 @@ export interface PanelLayout {
 }
 
 /**
- * Results gets the larger default share: the 3D view re-fits its camera to
- * whatever height it is given, whereas the results content has a natural
- * height and would otherwise scroll internally.
+ * The 3D view and the results share the column evenly by default: the
+ * visualisation is the product's centrepiece and was cramped (labels
+ * colliding) at a quarter-height. The results panel is compact — headline,
+ * key-figure tiles, collapsible details — so half the column suffices.
  */
-export const LAYOUT_DEFAULTS: PanelLayout = { vizFrac: 0.26, inputW: 380, collapsed: "none" };
+export const LAYOUT_DEFAULTS: PanelLayout = { vizFrac: 0.5, inputW: 380, collapsed: "none" };
 
 /** Neither panel may be dragged below this height. */
 export const MIN_PANEL_PX = 150;
@@ -26,7 +27,9 @@ export const MIN_INPUT_W = 300;
 export const MAX_INPUT_W = 560;
 export const HANDLE_PX = 10;
 
-const key = (mode: string) => `ssai.layout.${mode}`;
+// v2: the default split changed — versioning the key resets layouts saved
+// under the old cramped default instead of restoring them.
+const key = (mode: string) => `ssai.layout.v2.${mode}`;
 
 function clamp(v: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, v));

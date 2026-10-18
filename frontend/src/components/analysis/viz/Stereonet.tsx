@@ -75,8 +75,8 @@ export default function Stereonet({
   }, [dip1, dipdir1, dip2, dipdir2, phi, dipSlope, dipdirSlope]);
 
   return (
-    <div className="pointer-events-none absolute left-3 top-3 rounded-xl border border-white/12 bg-black/55 p-2 backdrop-blur-md">
-      <svg width={168} height={182} viewBox="0 0 168 182">
+    <div className="pointer-events-none absolute left-3 top-3 rounded-xl border border-glass-border bg-black/55 p-2 backdrop-blur-md">
+      <svg width={168} height={170} viewBox="0 -6 168 170" role="img" aria-label="Stereonet of the two joint planes, slope face and friction cone">
         <circle cx={CX} cy={CY} r={R} fill="rgba(255,255,255,0.03)" stroke="rgba(255,255,255,0.28)" strokeWidth="1" />
         {/* friction cone */}
         <circle
@@ -90,7 +90,7 @@ export default function Stereonet({
         />
         {/* cardinal ticks */}
         <line x1={CX} y1={CY - R} x2={CX} y2={CY - R + 7} stroke="rgba(255,255,255,0.5)" />
-        <text x={CX} y={CY - R - 3} fill="rgba(255,255,255,0.55)" fontSize="9" textAnchor="middle">
+        <text x={CX} y={CY - R - 2} fill="rgba(255,255,255,0.8)" fontSize="12" fontWeight="600" textAnchor="middle">
           N
         </text>
 
@@ -105,10 +105,11 @@ export default function Stereonet({
           </>
         )}
 
-        <text x={CX} y={172} fill="rgba(255,255,255,0.45)" fontSize="9" textAnchor="middle">
-          {unstable ? "Intersection inside friction cone" : "Intersection outside friction cone"}
-        </text>
       </svg>
+      {/* caption as HTML so it can wrap at a readable 12px */}
+      <p className="mt-1 max-w-[168px] text-center text-xs leading-snug text-secondary">
+        {unstable ? "Intersection inside friction cone" : "Intersection outside friction cone"}
+      </p>
     </div>
   );
 }

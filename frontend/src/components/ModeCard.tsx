@@ -46,9 +46,10 @@ export default function ModeCard({ mode, phase, delay, onSelect }: ModeCardProps
       onPointerLeave={() => setHovered(false)}
       onClick={interactive ? onSelect : undefined}
       disabled={!interactive}
+      aria-label={`${mode.title} failure — ${mode.description}. ${mode.meta}. Start analysis`}
       className={[
-        "glass-surface group relative isolate flex w-[240px] flex-col items-center overflow-hidden",
-        "rounded-[22px] px-6 pt-7 pb-8",
+        "glass-surface group relative isolate flex w-full flex-col items-center overflow-hidden",
+        "rounded-[22px] px-5 pt-6 pb-6 text-center",
         interactive ? "cursor-pointer" : "cursor-default",
         "transition-[border-color,box-shadow,background] duration-[400ms]",
         hovered
@@ -74,17 +75,23 @@ export default function ModeCard({ mode, phase, delay, onSelect }: ModeCardProps
         className="pointer-events-none absolute inset-0 rounded-[inherit] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
         style={{
           background:
-            "radial-gradient(220px circle at var(--mx,50%) var(--my,50%), rgba(0,113,227,0.22), transparent 65%)",
+            "radial-gradient(220px circle at var(--mx,50%) var(--my,50%), var(--color-accent-soft), transparent 65%)",
         }}
       />
-      <span className="pointer-events-none mb-[18px] block h-[132px] w-[132px]">
+      <span className="pointer-events-none mb-4 block h-[96px] w-[96px] sm:h-[120px] sm:w-[120px]">
         <mode.Preview active={hovered} />
       </span>
-      <span className="mb-1.5 text-[17px] font-semibold tracking-[-0.01em] text-primary">
-        {mode.title}
+      <span className="mb-1 text-lg font-semibold tracking-[-0.01em] text-primary">{mode.title}</span>
+      <span className="text-sm leading-snug text-secondary">{mode.description}</span>
+      <span className="mt-3 rounded-full border border-glass-border bg-white/[0.04] px-2.5 py-1 text-xs text-tertiary">
+        {mode.meta}
       </span>
-      <span className="text-center text-[13px] leading-[1.4] text-secondary">
-        {mode.description}
+      <span
+        className={`mt-4 text-sm font-medium transition-colors duration-300 ${
+          hovered ? "text-accent" : "text-secondary"
+        }`}
+      >
+        Analyse <span aria-hidden>→</span>
       </span>
     </motion.button>
   );

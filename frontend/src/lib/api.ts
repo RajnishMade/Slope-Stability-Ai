@@ -132,8 +132,22 @@ export async function sensitivity(
 /* Model metrics + dataset provenance (from GET /metrics/:mode)        */
 /* ------------------------------------------------------------------ */
 
+export interface CvStat {
+  mean: number;
+  std: number;
+}
+
 export interface ModelMetrics {
   task: "regression" | "classification";
+  /** 5-fold cross-validation (mean ± std), from scripts/evaluate_models.py */
+  cv?: {
+    n_folds: number;
+    r2?: CvStat;
+    rmse?: CvStat;
+    mae?: CvStat;
+    accuracy?: CvStat;
+    roc_auc?: CvStat;
+  };
   metrics: {
     r2?: number;
     rmse?: number;
@@ -177,10 +191,19 @@ export function outOfRange(
   return flags;
 }
 
-/** DGMS minimum factor of safety by material type. */
-export function dgmsThreshold(mode: ModeId): { value: number; material: string } {
-  // Circular here is the dump / overburden case; the rock modes take 1.2.
-  return mode === "circular" ? { value: 1.3, material: "dump" } : { value: 1.2, material: "rock" };
+/**
+ * DGMS minimum factor of safety, per DGMS (Tech) Circular No. 03 of 2020, para 3.2:
+ * a single two-tier rule for ALL pit, bench and dump slopes — not per material.
+ *   • ≥ 1.30  working / temporary slopes ("all other cases")  ← assessed by default
+ *   • ≥ 1.50  permanent or long-standing slopes
+ * We flag against the working-slope minimum; permanent slopes carry the higher bar.
+ * (Legally binding for opencast coal; best practice for metalliferous mines.)
+ */
+export const DGMS_FOS_WORKING = 1.3;
+export const DGMS_FOS_PERMANENT = 1.5;
+
+export function dgmsThreshold(): { value: number; permanent: number; basis: string } {
+  return { value: DGMS_FOS_WORKING, permanent: DGMS_FOS_PERMANENT, basis: "working slope" };
 }
 
 /** Analysis provenance shown in the results panel. */
