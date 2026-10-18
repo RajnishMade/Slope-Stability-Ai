@@ -2,8 +2,14 @@ import { fieldsFor } from "../data/analysisConfig";
 import type { ModeId } from "../data/modes";
 import type { ModeValues } from "../state/InputsProvider";
 
+/**
+ * Prediction API location. VITE_API_BASE overrides it at build time; otherwise
+ * production builds use the deployed Vercel API and `npm run dev` uses the
+ * local backend — so the site works without any environment variable set.
+ */
 export const API_BASE =
-  (import.meta.env.VITE_API_BASE as string | undefined) ?? "http://localhost:8000";
+  (import.meta.env.VITE_API_BASE as string | undefined) ||
+  (import.meta.env.DEV ? "http://localhost:8000" : "https://slope-stability-api.vercel.app");
 
 /** Frontend mode id -> backend route segment (the plane endpoint is /predict/plane). */
 const ROUTE: Record<ModeId, string> = {

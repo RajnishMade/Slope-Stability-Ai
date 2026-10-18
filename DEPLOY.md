@@ -50,7 +50,9 @@ keeps the frontend, scripts and figures out of the function bundle.
    - **Root Directory:** `frontend`
    - **Framework Preset:** Vite (auto-detected)
    - **Build Command / Output:** defaults (`npm run build` → `dist`)
-3. **Environment Variables:**
+3. **Environment Variables:** none needed. Production builds call
+   `https://slope-stability-api.vercel.app` by default (see `frontend/src/lib/api.ts`).
+   Only if your backend lives at a different URL, add:
 
    | Name | Value |
    | --- | --- |
