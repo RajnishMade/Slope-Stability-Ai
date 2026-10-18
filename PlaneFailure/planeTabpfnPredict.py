@@ -13,11 +13,19 @@ sys.path.append(os.path.join(PROJECT_ROOT, "Src"))
 import config
 from feature_engineering.FeaturePlane import make_plane_features, build_plane_row
 
-# Prefer TabPFN's hosted inference (no torch, auth via TABPFN_TOKEN env var).
-try:
-    from tabpfn_client import TabPFNRegressor
-except ImportError:
-    from tabpfn import TabPFNRegressor
+# Hosted inference (tabpfn-client) only when TABPFN_TOKEN is set — without a
+# token the client blocks on an interactive login. Otherwise use the local
+# package, falling back to the client only if it is the sole one installed.
+if os.environ.get("TABPFN_TOKEN"):
+    try:
+        from tabpfn_client import TabPFNRegressor
+    except ImportError:
+        from tabpfn import TabPFNRegressor
+else:
+    try:
+        from tabpfn import TabPFNRegressor
+    except ImportError:
+        from tabpfn_client import TabPFNRegressor
 
 import threading
 

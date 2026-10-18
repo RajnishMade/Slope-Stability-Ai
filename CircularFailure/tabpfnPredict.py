@@ -14,12 +14,19 @@ import numpy as np
 import pandas as pd
 import config
 
-# Prefer TabPFN's hosted inference (no torch, auth via TABPFN_TOKEN env var).
-# Falls back to the local model only if tabpfn-client isn't installed.
-try:
-    from tabpfn_client import TabPFNClassifier
-except ImportError:
-    from tabpfn import TabPFNClassifier
+# Hosted inference (tabpfn-client) only when TABPFN_TOKEN is set — without a
+# token the client blocks on an interactive login. Otherwise use the local
+# package, falling back to the client only if it is the sole one installed.
+if os.environ.get("TABPFN_TOKEN"):
+    try:
+        from tabpfn_client import TabPFNClassifier
+    except ImportError:
+        from tabpfn import TabPFNClassifier
+else:
+    try:
+        from tabpfn import TabPFNClassifier
+    except ImportError:
+        from tabpfn_client import TabPFNClassifier
 
 FEATURES = ["gamma_kN_m3", "c_kPa", "phi_deg", "beta_deg", "H_m", "r_u"]
 

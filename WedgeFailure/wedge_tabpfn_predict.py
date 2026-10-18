@@ -7,16 +7,28 @@ so repeated predictions (e.g. from a running API server) don't retrain.
 
 Run from the WedgeFailure folder:  python3 wedge_tabpfn_predict.py
 """
+import os
+
 import numpy as np
 
-# Prefer TabPFN's hosted inference (no torch, auth via TABPFN_TOKEN env var).
-# The hosted regressor takes no `device` arg; the local one does.
-try:
-    from tabpfn_client import TabPFNRegressor
-    _REGRESSOR_KW: dict = {}
-except ImportError:
-    from tabpfn import TabPFNRegressor
-    _REGRESSOR_KW = {"device": "cpu"}
+# Hosted inference (tabpfn-client) only when TABPFN_TOKEN is set — without a
+# token the client blocks on an interactive login. Otherwise use the local
+# package. The hosted regressor takes no `device` arg; the local one does.
+_REGRESSOR_KW: dict
+if os.environ.get("TABPFN_TOKEN"):
+    try:
+        from tabpfn_client import TabPFNRegressor
+        _REGRESSOR_KW = {}
+    except ImportError:
+        from tabpfn import TabPFNRegressor
+        _REGRESSOR_KW = {"device": "cpu"}
+else:
+    try:
+        from tabpfn import TabPFNRegressor
+        _REGRESSOR_KW = {"device": "cpu"}
+    except ImportError:
+        from tabpfn_client import TabPFNRegressor
+        _REGRESSOR_KW = {}
 
 try:
     from .wedge_config import FEATURES, _wrap180, load_data   # imported as a package (e.g. by the backend)

@@ -9,6 +9,7 @@ so repeated predictions (e.g. from a running API server) don't retrain.
 Run:  python3 topple_tabpfn_predict.py
       TABPFN_ALLOW_CPU_LARGE_DATASET=1 python3 topple_tabpfn_predict.py   # if local TabPFN >1000 rows
 """
+import os
 import threading
 
 import numpy as np
@@ -22,13 +23,19 @@ _LOCK = threading.Lock()
 
 
 def _get_regressor():
-    """Prefer the hosted client (no row cap); fall back to local."""
+    """Hosted client (no row cap) only when TABPFN_TOKEN is set — without a
+    token it blocks on an interactive login. Otherwise use the local package."""
+    if os.environ.get("TABPFN_TOKEN"):
+        try:
+            from tabpfn_client import TabPFNRegressor
+            return TabPFNRegressor()
+        except ImportError:
+            pass
     try:
+        from tabpfn import TabPFNRegressor
+    except ImportError:
         from tabpfn_client import TabPFNRegressor
         return TabPFNRegressor()
-    except ImportError:
-        pass
-    from tabpfn import TabPFNRegressor
     try:
         return TabPFNRegressor(device="cpu", ignore_pretraining_limits=True)
     except TypeError:
