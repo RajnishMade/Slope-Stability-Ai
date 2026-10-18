@@ -85,8 +85,14 @@ async def lifespan(app: FastAPI):
             "predictions will block on an interactive login. Set TABPFN_TOKEN "
             "(free key: https://ux.priorlabs.ai/account) or `pip install tabpfn`."
         )
-    print("Starting API; warming TabPFN models in the background...")
-    threading.Thread(target=_warm_models, name="model-warmup", daemon=True).start()
+    # On Vercel (serverless) every new instance would re-run the warm-up — four
+    # TabPFN fits before serving anything. There, fit lazily instead: each
+    # request fits only the model it needs, once per instance (get_model caches).
+    if os.environ.get("VERCEL"):
+        print("Running on Vercel: models fit lazily on first request per mode.")
+    else:
+        print("Starting API; warming TabPFN models in the background...")
+        threading.Thread(target=_warm_models, name="model-warmup", daemon=True).start()
     yield
 
 

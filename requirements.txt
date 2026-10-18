@@ -1,11 +1,16 @@
 # Backend deps. Uses TabPFN's HOSTED inference (tabpfn-client) rather than the
-# local torch model, so the container stays small and never OOMs on a free/small
-# host. Auth is via the TABPFN_TOKEN env var, which tabpfn-client reads
-# automatically. No torch, no local model weights.
+# local torch model, so the backend fits a free serverless host (Vercel's Python
+# bundle limit is 500 MB; this set is ~450 MB). Auth is via the TABPFN_TOKEN env
+# var, which tabpfn-client reads automatically. No torch, no local model weights.
+#
+# To run locally WITHOUT a token, also `pip install tabpfn` (the local model);
+# the backend uses it automatically whenever TABPFN_TOKEN is unset.
 pandas==2.3.3
 numpy==2.0.2
 scikit-learn==1.6.1
 tabpfn-client==0.3.1
 fastapi==0.128.0
-uvicorn[standard]==0.39.0
+# plain uvicorn (not [standard]): only used for local dev — Vercel runs the ASGI
+# app itself, and the [standard] extras would add ~25 MB to the bundle
+uvicorn==0.39.0
 pydantic==2.12.5
