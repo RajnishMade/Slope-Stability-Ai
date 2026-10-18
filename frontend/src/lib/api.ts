@@ -49,7 +49,17 @@ export async function predict(mode: ModeId, payload: Record<string, number>): Pr
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) throw new Error(`Solver returned ${res.status} ${res.statusText}`);
+  if (!res.ok) {
+    // the API returns {"detail": "..."} with the real cause — show it when present
+    let detail = "";
+    try {
+      const body = await res.json();
+      if (typeof body?.detail === "string") detail = body.detail;
+    } catch {
+      /* non-JSON error body */
+    }
+    throw new Error(detail || `Solver returned ${res.status} ${res.statusText}`);
+  }
   const data = await res.json();
 
   if (mode === "circular") {

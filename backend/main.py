@@ -1,19 +1,24 @@
 """
 main.py — Slope Stability AI backend API
 Serves TabPFN predictions for all four slope-failure modes behind one
-FastAPI app. Each model is trained once, at server startup, and kept in
-memory — requests only call .predict(), they never retrain.
+FastAPI app. Each model is fitted once per server process — in the background
+at startup, or on the first request for that mode on Vercel — and kept in
+memory, so later requests only call .predict().
 
 Run from the project root:
     uvicorn backend.main:app --reload
 
 Interactive docs once running:  http://127.0.0.1:8000/docs
 """
+import importlib.util
 import json
 import os
 import sys
+import tempfile
 import threading
+import traceback
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if PROJECT_ROOT not in sys.path:
@@ -43,6 +48,39 @@ from backend.schemas import (
     WedgeRequest, WedgeResponse,
 )
 
+# Which TabPFN backend serves predictions. Mirrors the predictors' rule: hosted
+# inference (tabpfn-client) only when TABPFN_TOKEN is set; otherwise the local
+# package (CPU, no token); "unconfigured" means neither can work.
+_HAS_CLIENT = importlib.util.find_spec("tabpfn_client") is not None
+_HAS_LOCAL = importlib.util.find_spec("tabpfn") is not None
+_HAS_TOKEN = bool(os.environ.get("TABPFN_TOKEN"))
+TABPFN_BACKEND = (
+    "hosted" if (_HAS_TOKEN and _HAS_CLIENT) else "local" if _HAS_LOCAL else "unconfigured"
+)
+
+
+def _make_tabpfn_client_serverless_safe():
+    """tabpfn-client caches the access token in a file inside its own package
+    directory (<site-packages>/tabpfn_client/.tabpfn/config). On serverless hosts
+    such as Vercel that directory is read-only — only the temp dir is writable —
+    so authenticating raises OSError and every prediction fails. When the package
+    directory isn't writable, point the cache at the temp dir instead."""
+    if not _HAS_CLIENT:
+        return
+    from tabpfn_client import constants as tc
+    from tabpfn_client.service_wrapper import UserAuthenticationClient
+
+    pkg_dir = Path(tc.__file__).resolve().parent
+    if os.access(pkg_dir, os.W_OK):
+        return
+    cache = Path(tempfile.gettempdir()) / "tabpfn_client"
+    tc.CACHE_DIR = cache
+    UserAuthenticationClient.CACHED_TOKEN_FILE = cache / "config"
+    print(f"tabpfn-client package dir is read-only; caching its token in {cache}")
+
+
+_make_tabpfn_client_serverless_safe()
+
 
 def _warm_models():
     """Fit all four models in the background so first requests are fast, without
@@ -66,18 +104,9 @@ def _warm_models():
 async def lifespan(app: FastAPI):
     # Non-blocking: the API serves /health immediately; models warm in the
     # background and each get_model() also lazily fits on first use.
-    #
-    # Mirrors the predictors' selection rule: hosted inference (tabpfn-client)
-    # only when TABPFN_TOKEN is set; otherwise the local package (CPU, no token).
-    import importlib.util
-
-    has_client = importlib.util.find_spec("tabpfn_client") is not None
-    has_local = importlib.util.find_spec("tabpfn") is not None
-    has_token = bool(os.environ.get("TABPFN_TOKEN"))
-
-    if has_token and has_client:
+    if TABPFN_BACKEND == "hosted":
         print("TABPFN_TOKEN detected — using hosted TabPFN inference (tabpfn-client).")
-    elif has_local:
+    elif TABPFN_BACKEND == "local":
         print("Using local TabPFN inference (tabpfn package, CPU) — no token required.")
     else:
         print(
@@ -111,9 +140,41 @@ app.add_middleware(
 )
 
 
+@app.get("/")
+def root():
+    """Landing response, so opening the bare API URL doesn't look broken."""
+    return {
+        "name": "Slope Stability AI API",
+        "status": "ok",
+        "docs": "/docs",
+        "health": "/health",
+        "endpoints": ["/predict/circular", "/predict/plane", "/predict/wedge", "/predict/toppling", "/metrics"],
+    }
+
+
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    # Reports configuration only — never the token itself.
+    return {"status": "ok", "tabpfn": TABPFN_BACKEND, "token_set": _HAS_TOKEN}
+
+
+def _predict(fn, **kwargs):
+    """Run a predictor and turn failures into a readable JSON error.
+
+    An unhandled exception would surface as a bare "Internal Server Error" with
+    no CORS headers, so the site could only say "could not reach the API".
+    Raising HTTPException keeps CORS headers on the response and carries the
+    real cause (the full traceback goes to the server log)."""
+    if TABPFN_BACKEND == "unconfigured":
+        raise HTTPException(
+            status_code=503,
+            detail="Server is missing TABPFN_TOKEN — set it in the hosting environment and redeploy.",
+        )
+    try:
+        return fn(**kwargs)
+    except Exception as e:  # noqa: BLE001 — reported to the client, logged in full
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Prediction failed — {type(e).__name__}: {str(e)[:240]}")
 
 
 @app.get("/metrics")
@@ -131,34 +192,34 @@ def metrics_for(mode: str):
 
 @app.post("/predict/circular", response_model=CircularResponse)
 def predict_circular_endpoint(req: CircularRequest):
-    return predict_slope(gamma=req.gamma, c=req.c, phi=req.phi,
-                          beta=req.beta, H=req.H, r_u=req.r_u)
+    return _predict(predict_slope, gamma=req.gamma, c=req.c, phi=req.phi,
+                    beta=req.beta, H=req.H, r_u=req.r_u)
 
 
 @app.post("/predict/plane", response_model=PlaneResponse)
 def predict_plane_endpoint(req: PlaneRequest):
-    return predict_plane(slope_af=req.slope_af, plane_dip=req.plane_dip,
-                          upper_slope=req.upper_slope, H=req.H, gamma=req.gamma,
-                          phi=req.phi, c=req.c, kh=req.kh, water_level=req.water_level)
+    return _predict(predict_plane, slope_af=req.slope_af, plane_dip=req.plane_dip,
+                    upper_slope=req.upper_slope, H=req.H, gamma=req.gamma,
+                    phi=req.phi, c=req.c, kh=req.kh, water_level=req.water_level)
 
 
 @app.post("/predict/toppling", response_model=TopplingResponse)
 def predict_toppling_endpoint(req: TopplingRequest):
-    return predict_toppling(slope_angle_deg=req.slope_angle_deg,
-                             bedding_dip_deg=req.bedding_dip_deg,
-                             joint_spacing_m=req.joint_spacing_m,
-                             slope_height_m=req.slope_height_m,
-                             joint_friction_deg=req.joint_friction_deg,
-                             unit_weight_kNm3=req.unit_weight_kNm3,
-                             water_ratio=req.water_ratio)
+    return _predict(predict_toppling, slope_angle_deg=req.slope_angle_deg,
+                    bedding_dip_deg=req.bedding_dip_deg,
+                    joint_spacing_m=req.joint_spacing_m,
+                    slope_height_m=req.slope_height_m,
+                    joint_friction_deg=req.joint_friction_deg,
+                    unit_weight_kNm3=req.unit_weight_kNm3,
+                    water_ratio=req.water_ratio)
 
 
 @app.post("/predict/wedge", response_model=WedgeResponse)
 def predict_wedge_endpoint(req: WedgeRequest):
-    return predict_wedge(dip_j1=req.dip_j1, dip_j2=req.dip_j2,
-                          dipdir_j1=req.dipdir_j1, dipdir_j2=req.dipdir_j2,
-                          dip_slope=req.dip_slope, dipdir_slope=req.dipdir_slope,
-                          dip_upper=req.dip_upper, dipdir_upper=req.dipdir_upper,
-                          height_m=req.height_m, gamma_kN_m3=req.gamma_kN_m3,
-                          c1_kPa=req.c1_kPa, phi1_deg=req.phi1_deg,
-                          c2_kPa=req.c2_kPa, phi2_deg=req.phi2_deg, w_pct=req.w_pct)
+    return _predict(predict_wedge, dip_j1=req.dip_j1, dip_j2=req.dip_j2,
+                    dipdir_j1=req.dipdir_j1, dipdir_j2=req.dipdir_j2,
+                    dip_slope=req.dip_slope, dipdir_slope=req.dipdir_slope,
+                    dip_upper=req.dip_upper, dipdir_upper=req.dipdir_upper,
+                    height_m=req.height_m, gamma_kN_m3=req.gamma_kN_m3,
+                    c1_kPa=req.c1_kPa, phi1_deg=req.phi1_deg,
+                    c2_kPa=req.c2_kPa, phi2_deg=req.phi2_deg, w_pct=req.w_pct)
