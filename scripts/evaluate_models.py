@@ -17,7 +17,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
 from sklearn.metrics import (
     accuracy_score,
     mean_absolute_error,
@@ -32,6 +32,7 @@ sys.path.insert(0, str(ROOT / "Src"))
 os.chdir(ROOT)
 
 SEED = 42
+N_FOLDS = 5
 
 # request-field key -> dataset column (frontend/backend names differ for some modes)
 COLUMN_MAP = {
@@ -81,6 +82,73 @@ def reg_metrics(y_true, y_pred, n_train):
     }
 
 
+def _summ(values):
+    """mean and (population) std of a list of fold scores, rounded for JSON."""
+    arr = np.asarray(values, dtype=float)
+    return {"mean": round(float(arr.mean()), 4), "std": round(float(arr.std(ddof=0)), 4)}
+
+
+def cv_regressor(make_model, X, y, n_splits=N_FOLDS):
+    """K-fold cross-validation for a TabPFN regressor.
+
+    `make_model` is a zero-arg factory returning a *fresh* regressor per fold
+    (TabPFN must be re-fit on each fold's train split). Returns per-fold scores
+    plus mean±std, so a report can quote e.g. "R2 0.95 ± 0.03".
+    """
+    X = np.asarray(X)
+    y = np.asarray(y)
+    kf = KFold(n_splits=n_splits, shuffle=True, random_state=SEED)
+    r2s, rmses, maes = [], [], []
+    for i, (tr, te) in enumerate(kf.split(X), 1):
+        reg = make_model()
+        reg.fit(X[tr], y[tr])
+        pred = np.asarray(reg.predict(X[te])).ravel()
+        r2s.append(r2_score(y[te], pred))
+        rmses.append(np.sqrt(mean_squared_error(y[te], pred)))
+        maes.append(mean_absolute_error(y[te], pred))
+        print(f"    fold {i}/{n_splits}: r2={r2s[-1]:.4f}", flush=True)
+    return {
+        "n_folds": n_splits,
+        "r2": _summ(r2s),
+        "rmse": _summ(rmses),
+        "mae": _summ(maes),
+        "folds": {
+            "r2": [round(float(v), 4) for v in r2s],
+            "rmse": [round(float(v), 4) for v in rmses],
+            "mae": [round(float(v), 4) for v in maes],
+        },
+    }
+
+
+def cv_classifier(make_model, X, y, n_splits=N_FOLDS):
+    """Stratified K-fold cross-validation for a TabPFN classifier.
+
+    Stratified so each fold keeps the stable/unstable balance. Returns per-fold
+    accuracy and ROC-AUC plus mean±std.
+    """
+    X = np.asarray(X)
+    y = np.asarray(y)
+    skf = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=SEED)
+    accs, aucs = [], []
+    for i, (tr, te) in enumerate(skf.split(X, y), 1):
+        clf = make_model()
+        clf.fit(X[tr], y[tr])
+        pred = clf.predict(X[te])
+        proba = clf.predict_proba(X[te])[:, 1]
+        accs.append(accuracy_score(y[te], pred))
+        aucs.append(roc_auc_score(y[te], proba))
+        print(f"    fold {i}/{n_splits}: acc={accs[-1]:.4f}", flush=True)
+    return {
+        "n_folds": n_splits,
+        "accuracy": _summ(accs),
+        "roc_auc": _summ(aucs),
+        "folds": {
+            "accuracy": [round(float(v), 4) for v in accs],
+            "roc_auc": [round(float(v), 4) for v in aucs],
+        },
+    }
+
+
 def evaluate_circular():
     from tabpfn import TabPFNClassifier
     import config
@@ -96,6 +164,7 @@ def evaluate_circular():
     proba = clf.predict_proba(Xte)[:, 1]
 
     acc = float(accuracy_score(yte, pred))
+    cv = cv_classifier(TabPFNClassifier, X, y)
     return {
         "task": "classification",
         "metrics": {
@@ -104,6 +173,7 @@ def evaluate_circular():
             "n_train": int(len(ytr)),
             "n_test": int(len(yte)),
         },
+        "cv": cv,
         "plain": f"Correctly classified {acc * 100:.0f}% of slopes it had never seen.",
         "dataset": {
             "rows": int(len(df)),
@@ -136,6 +206,7 @@ def evaluate_planar():
     reg.fit(Xtr, ytr)
     pred = np.asarray(reg.predict(Xte)).ravel()
     m = reg_metrics(yte, pred, len(ytr))
+    cv = cv_regressor(TabPFNRegressor, X, y)
 
     cc = df["case_class"].fillna("UNKNOWN").value_counts().to_dict()
     total = int(sum(cc.values()))
@@ -144,6 +215,7 @@ def evaluate_planar():
     return {
         "task": "regression",
         "metrics": m,
+        "cv": cv,
         "plain": (
             f"Explains {m['r2'] * 100:.0f}% of the variation in factor of safety on unseen "
             f"cases, typically within ±{m['mae']:.2f} FoS."
@@ -171,19 +243,25 @@ def evaluate_toppling():
     from tabpfn import TabPFNRegressor
 
     X, y = load_xy()
+
+    def make_model():
+        try:
+            return TabPFNRegressor(device="cpu", ignore_pretraining_limits=True)
+        except TypeError:
+            return TabPFNRegressor(ignore_pretraining_limits=True)
+
     Xtr, Xte, ytr, yte = train_test_split(X, y, test_size=0.2, random_state=SEED)
-    try:
-        reg = TabPFNRegressor(device="cpu", ignore_pretraining_limits=True)
-    except TypeError:
-        reg = TabPFNRegressor(ignore_pretraining_limits=True)
+    reg = make_model()
     reg.fit(Xtr, ytr)
     pred = np.asarray(reg.predict(Xte)).ravel()
     m = reg_metrics(yte, pred, len(ytr))
+    cv = cv_regressor(make_model, X, y)
 
     df = pd.read_csv(ROOT / "Data" / "toppling_synthetic_verfied.csv")
     return {
         "task": "regression",
         "metrics": m,
+        "cv": cv,
         "plain": (
             f"Reproduces the Goodman–Bray solver to within ±{m['mae']:.2f} FoS on unseen "
             f"cases (R² {m['r2']:.2f}). This measures solver agreement, not field accuracy."
@@ -216,10 +294,12 @@ def evaluate_wedge():
     reg.fit(Xtr, ytr)
     pred = np.asarray(reg.predict(Xte)).ravel()
     m = reg_metrics(yte, pred, len(ytr))
+    cv = cv_regressor(lambda: TabPFNRegressor(device="cpu"), X.values, y.values)
 
     return {
         "task": "regression",
         "metrics": m,
+        "cv": cv,
         "plain": (
             f"Reproduces the block-theory solver to within ±{m['mae']:.2f} FoS on unseen "
             f"cases (R² {m['r2']:.2f}). This measures solver agreement, not field accuracy."
@@ -252,7 +332,8 @@ def main():
         print(f"evaluating {name} ...", flush=True)
         try:
             out[name] = fn()
-            print(f"  -> {out[name]['metrics']}", flush=True)
+            print(f"  -> single-split: {out[name]['metrics']}", flush=True)
+            print(f"  -> {N_FOLDS}-fold CV:  {out[name].get('cv')}", flush=True)
         except Exception as e:  # keep going; a missing mode is better than no file
             print(f"  !! {name} failed: {e}", flush=True)
 
